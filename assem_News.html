@@ -2,19 +2,18 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>국회 위원회 통합 모니터링</title>
     <style>
         :root { --primary: #003478; --naver: #03cf5d; --yt: #ff0000; --bg: #f4f7fa; }
         * { box-sizing: border-box; font-family: 'Pretendard', sans-serif; }
         body { background: var(--bg); margin: 0; padding: 15px; height: 100vh; display: flex; flex-direction: column; gap: 15px; overflow: hidden; }
 
-        /* [1단계] 명단 영역 */
+        /* [데스크탑 전용 스타일] */
         .step-1-container { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); height: 45%; min-height: 350px; display: flex; flex-direction: column; }
         .control-panel { display: flex; gap: 10px; margin-bottom: 15px; padding: 15px; background: #f1f3f5; border-radius: 8px; align-items: center; }
         .control-panel h2 { font-size: 18px; margin: 0; color: var(--primary); white-space: nowrap; }
         select { flex: 1; padding: 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; }
-        
         .table-wrapper { overflow: auto; flex: 1; border: 1px solid #dee2e6; border-radius: 8px; }
         table { width: 100%; border-collapse: collapse; min-width: 1800px; font-size: 13px; }
         th { background: #e9ecef; padding: 12px; border-bottom: 2px solid #dee2e6; text-align: left; position: sticky; top: 0; z-index: 10; }
@@ -23,7 +22,6 @@
         tr.active { background-color: #e8f0fe !important; font-weight: bold; border-left: 5px solid var(--primary); }
         .staff-cell { color: #555; font-size: 11px; white-space: normal; min-width: 150px; line-height: 1.4; }
 
-        /* [2단계] 뉴스 영역 */
         .step-2-container { flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; min-height: 0; }
         .monitor-col { background: #fff; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; overflow: hidden; }
         .col-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #eee; }
@@ -32,59 +30,68 @@
         .item { padding: 12px 0; border-bottom: 1px solid #f1f1f1; text-decoration: none; color: inherit; display: block; }
         .item-title { font-size: 0.95rem; font-weight: 600; line-height: 1.4; margin-bottom: 4px; }
         .yt-thumb { width: 100%; aspect-ratio: 16/9; background-size: cover; border-radius: 8px; margin-bottom: 8px; background-color: #000; }
+
+        /* 모바일용 탭 바 (PC에선 숨김) */
+        .mobile-nav { display: none; }
+
+        /* [모바일 전용 스타일 - 768px 미만] */
+        @media (max-width: 768px) {
+            body { padding: 0; gap: 0; }
+            .step-1-container { height: 100%; border-radius: 0; box-shadow: none; padding: 10px; }
+            .control-panel { padding: 10px; margin-bottom: 10px; }
+            .control-panel h2 { font-size: 16px; }
+            
+            /* 테이블 대신 카드 리스트로 전환 */
+            .table-wrapper { border: none; }
+            table thead { display: none; } /* 헤더 숨김 */
+            table, tbody, tr, td { display: block; width: 100%; min-width: auto; }
+            tr { background: white; border: 1px solid #eee; border-radius: 10px; margin-bottom: 10px; padding: 12px; }
+            tr.active { border: 2px solid var(--primary); }
+            td { border: none; padding: 2px 0; white-space: normal; }
+            
+            /* 특정 셀만 보이게 하거나 스타일 조정 */
+            td:not(:nth-child(3)):not(:nth-child(4)):not(:nth-child(6)):not(:nth-child(7)):not(:nth-child(8)) { display: none; }
+            td:nth-child(4) { font-size: 18px; color: #000; } /* 성명 */
+            td:nth-child(6) { display: inline-block; font-size: 12px; color: #666; margin-right: 5px; } /* 정당 */
+            td:nth-child(7) { display: inline-block; font-size: 12px; color: #666; } /* 지역구 */
+            td:nth-child(8) { display: block; margin-top: 5px; font-weight: bold; } /* 전화번호 */
+
+            /* 뉴스 영역 탭 구조로 변경 */
+            .step-2-container { display: none; padding: 10px; background: white; }
+            .step-2-container.active { display: block; height: 100%; overflow-y: auto; }
+            .monitor-col { box-shadow: none; padding: 0; margin-bottom: 20px; }
+
+            /* 하단 고정 탭바 */
+            .mobile-nav { 
+                display: flex; position: fixed; bottom: 0; width: 100%; background: #fff; 
+                border-top: 1px solid #ddd; height: 60px; z-index: 1000;
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+            .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; color: #888; cursor: pointer; }
+            .nav-item.active { color: var(--primary); font-weight: bold; }
+        }
     </style>
 </head>
 <body>
 
-<div class="step-1-container">
+<div id="section-1" class="step-1-container">
     <div class="control-panel">
-        <h2>🏛️ 위원회 선택</h2>
+        <h2>🏛️ 위원회</h2>
         <select id="commSelector" onchange="fetchAssemblyList()">
-            <optgroup label="상임위원회">
-                <option value="국회운영위원회">국회운영위원회</option>
-                <option value="법제사법위원회">법제사법위원회</option>
-                <option value="정무위원회">정무위원회</option>
-                <option value="기획재정위원회">기획재정위원회</option>
-                <option value="교육위원회">교육위원회</option>
-                <option value="과학기술정보방송통신위원회">과학기술정보방송통신위원회</option>
-                <option value="외교통일위원회">외교통일위원회</option>
-                <option value="국방위원회">국방위원회</option>
-                <option value="행정안전위원회">행정안전위원회</option>
-                <option value="문화체육관광위원회" selected>문화체육관광위원회</option>
-                <option value="농림축산식품해양수산위원회">농림축산식품해양수산위원회</option>
-                <option value="산업통상자원중소벤처기업위원회">산업통상자원중소벤처기업위원회</option>
-                <option value="보건복지위원회">보건복지위원회</option>
-                <option value="환경노동위원회">환경노동위원회</option>
-                <option value="국토교통위원회">국토교통위원회</option>
-                <option value="정보위원회">정보위원회</option>
-                <option value="여성가족위원회">여성가족위원회</option>
-            </optgroup>
-            <optgroup label="특별위원회">
-                <option value="예산결산특별위원회">예산결산특별위원회</option>
-                <option value="윤리특별위원회">윤리특별위원회</option>
-                <option value="인사청문특별위원회">인사청문특별위원회</option>
-            </optgroup>
-        </select>
-        <span id="load-status" style="font-size:13px; color:var(--primary); font-weight:bold;"></span>
+            <option value="문화체육관광위원회" selected>문화체육관광위원회</option>
+            <option value="국회운영위원회">국회운영위원회</option>
+            <option value="법제사법위원회">법제사법위원회</option>
+            <option value="정무위원회">정무위원회</option>
+            <option value="보건복지위원회">보건복지위원회</option>
+            </select>
+        <span id="load-status" style="font-size:11px;"></span>
     </div>
 
     <div class="table-wrapper">
         <table>
             <thead>
                 <tr>
-                    <th>순번</th>
-                    <th>위원회명</th>
-                    <th>구성</th>
-                    <th>성명</th>
-                    <th>성명(한자)</th>
-                    <th>정당</th>
-                    <th>선거구</th>
-                    <th>전화번호</th>
-                    <th>이메일</th>
-                    <th>호실</th>
-                    <th>보좌관</th>
-                    <th>비서관</th>
-                    <th>비서</th>
+                    <th>순번</th><th>위원회명</th><th>구성</th><th>성명</th><th>성명(한자)</th><th>정당</th><th>선거구</th><th>전화번호</th><th>이메일</th><th>호실</th><th>보좌관</th><th>비서관</th><th>비서</th>
                 </tr>
             </thead>
             <tbody id="memberTbody"></tbody>
@@ -92,11 +99,16 @@
     </div>
 </div>
 
-<div class="step-2-container">
+<div id="section-2" class="step-2-container">
     <div class="monitor-col"><div class="col-title" style="color:var(--naver)">🟢 네이버 뉴스</div><div id="naverArea" class="content-scroll"></div></div>
     <div class="monitor-col"><div class="col-title" style="color:var(--primary)">🔵 구글 뉴스</div><div id="googleArea" class="content-scroll"></div></div>
     <div class="monitor-col"><div class="col-title" style="color:var(--yt)">🎬 유튜브</div><div id="ytArea" class="content-scroll"></div></div>
 </div>
+
+<nav class="mobile-nav">
+    <div class="nav-item active" onclick="showSection(1)">👤 목록</div>
+    <div class="nav-item" onclick="showSection(2)">📰 뉴스</div>
+</nav>
 
 <script>
     const ASSEMBLY_KEY = '4fbc27e65852496ab48087bcb355321a';
@@ -111,33 +123,25 @@
         const comm = document.getElementById('commSelector').value;
         const status = document.getElementById('load-status');
         const tbody = document.getElementById('memberTbody');
-        
-        status.innerText = "📡 데이터 로딩 중...";
-        tbody.innerHTML = '';
-
+        status.innerText = "로딩중...";
         try {
-            // 국회 API에서 DEPT_NM(위원회명)으로 쿼리
             const url = `https://open.assembly.go.kr/portal/openapi/nktulghcadyhmiqxi?KEY=${ASSEMBLY_KEY}&Type=json&pIndex=1&pSize=100&DEPT_NM=${encodeURIComponent(comm)}`;
             const res = await fetch(url);
             const data = await res.json();
-
             if (data.nktulghcadyhmiqxi) {
                 currentMembers = data.nktulghcadyhmiqxi[1].row;
-                // 성명 기준 가나다순 정렬
                 currentMembers.sort((a, b) => a.HG_NM.localeCompare(b.HG_NM, 'ko'));
-                
-                status.innerText = `✅ ${currentMembers.length}명 로드 완료`;
-
+                status.innerText = `✅ ${currentMembers.length}명`;
                 tbody.innerHTML = currentMembers.map((m, idx) => `
                     <tr id="row_${idx}" onclick="startMonitor(${idx})">
                         <td>${idx + 1}</td>
                         <td>${m.DEPT_NM}</td>
-                        <td><span style="background:#eee; padding:2px 6px; border-radius:4px;">${m.JOB_RES_NM || '위원'}</span></td>
+                        <td>${m.JOB_RES_NM || '위원'}</td>
                         <td style="font-weight:bold;">${m.HG_NM}</td>
                         <td>${m.HJ_NM || '-'}</td>
                         <td>${m.POLY_NM}</td>
                         <td>${m.ORIG_NM}</td>
-                        <td style="color:var(--primary); font-weight:500;">${m.ASSEM_TEL || '-'}</td>
+                        <td style="color:var(--primary);">${m.ASSEM_TEL || '-'}</td>
                         <td>${m.ASSEM_EMAIL || '-'}</td>
                         <td>${m.ROOM_NO ? m.ROOM_NO + '호' : '-'}</td>
                         <td class="staff-cell">${m.STAFF || '-'}</td>
@@ -145,15 +149,15 @@
                         <td class="staff-cell">${m.SECRETARY2 || '-'}</td>
                     </tr>
                 `).join('');
-
-                if(currentMembers.length > 0) startMonitor(0);
+                if(currentMembers.length > 0) startMonitor(0, false);
             }
-        } catch (e) { status.innerText = "❌ 로드 실패"; }
+        } catch (e) { status.innerText = "❌ 실패"; }
     }
 
-    function startMonitor(idx) {
+    function startMonitor(idx, autoJump = true) {
         document.querySelectorAll('tr').forEach(tr => tr.classList.remove('active'));
-        document.getElementById(`row_${idx}`).classList.add('active');
+        const targetRow = document.getElementById(`row_${idx}`);
+        if(targetRow) targetRow.classList.add('active');
 
         const m = currentMembers[idx];
         const query = `"${m.POLY_NM}" "${m.HG_NM}"`; 
@@ -161,45 +165,45 @@
         fetchNaver(query);
         fetchGoogle(query);
         fetchYoutube(query);
+
+        // 모바일에서 의원 클릭 시 뉴스 섹션으로 자동 점프
+        if(window.innerWidth <= 768 && autoJump) {
+            showSection(2);
+        }
     }
 
+    function showSection(num) {
+        if(window.innerWidth > 768) return; // PC에선 작동 안함
+        
+        document.getElementById('section-1').style.display = (num === 1) ? 'flex' : 'none';
+        document.getElementById('section-2').style.display = (num === 2) ? 'block' : 'none';
+        document.getElementById('section-2').classList.toggle('active', num === 2);
+        
+        const navs = document.querySelectorAll('.nav-item');
+        navs.forEach((n, i) => n.classList.toggle('active', i === num-1));
+    }
+
+    // [기존 Fetch 함수들 동일하게 유지]
     async function fetchNaver(q) {
         const api = `https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(q)}&display=15&sort=date`;
         const res = await fetch(`${PROXY}?url=${encodeURIComponent(api)}`);
         const data = await res.json();
-        document.getElementById('naverArea').innerHTML = (data.items || []).map(i => `
-            <a href="${i.link}" target="_blank" class="item">
-                <div class="item-title">${i.title.replace(/<[^>]*>?/gm, '')}</div>
-                <div class="item-info" style="font-size:11px; color:#888;">${new Date(i.pubDate).toLocaleDateString()}</div>
-            </a>
-        `).join('') || '결과 없음';
+        document.getElementById('naverArea').innerHTML = (data.items || []).map(i => `<a href="${i.link}" target="_blank" class="item"><div class="item-title">${i.title.replace(/<[^>]*>?/gm, '')}</div><div class="item-info" style="font-size:11px; color:#888;">${new Date(i.pubDate).toLocaleDateString()}</div></a>`).join('') || '결과 없음';
     }
-
     async function fetchGoogle(q) {
         const url = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=ko&gl=KR&ceid=KR:ko`;
         const res = await fetch(`${PROXY}?url=${encodeURIComponent(url)}`);
         const text = await res.text();
         const xml = new DOMParser().parseFromString(text, "text/xml");
         const items = Array.from(xml.querySelectorAll("item")).slice(0, 15);
-        document.getElementById('googleArea').innerHTML = items.map(i => `
-            <a href="${i.querySelector("link").textContent}" target="_blank" class="item">
-                <div class="item-title">${i.querySelector("title").textContent}</div>
-                <div class="item-info" style="font-size:11px; color:#888;">${i.querySelector("source")?.textContent || ''}</div>
-            </a>
-        `).join('') || '결과 없음';
+        document.getElementById('googleArea').innerHTML = items.map(i => `<a href="${i.querySelector("link").textContent}" target="_blank" class="item"><div class="item-title">${i.querySelector("title").textContent}</div><div class="item-info" style="font-size:11px; color:#888;">${i.querySelector("source")?.textContent || ''}</div></a>`).join('') || '결과 없음';
     }
-
     async function fetchYoutube(q) {
         const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&maxResults=10&order=date&type=video&key=${YT_KEY}`;
         try {
             const res = await fetch(url);
             const data = await res.json();
-            document.getElementById('ytArea').innerHTML = (data.items || []).map(v => `
-                <a href="https://www.youtube.com/watch?v=${v.id.videoId}" target="_blank" class="item">
-                    <div class="yt-thumb" style="background-image:url('${v.snippet.thumbnails.medium.url}')"></div>
-                    <div class="item-title" style="font-size:13px;">${v.snippet.title}</div>
-                </a>
-            `).join('') || '결과 없음';
+            document.getElementById('ytArea').innerHTML = (data.items || []).map(v => `<a href="https://www.youtube.com/watch?v=${v.id.videoId}" target="_blank" class="item"><div class="yt-thumb" style="background-image:url('${v.snippet.thumbnails.medium.url}')"></div><div class="item-title" style="font-size:13px;">${v.snippet.title}</div></a>`).join('') || '결과 없음';
         } catch(e) { document.getElementById('ytArea').innerHTML = '로딩 실패'; }
     }
 </script>
