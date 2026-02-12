@@ -2,54 +2,80 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제22대 국회 통합 인적사항 관리 시스템</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>제22대 국회 인적사항 검색</title>
     <style>
         :root { --primary: #003478; --accent: #0056b3; --bg: #f8f9fa; --border: #dee2e6; }
-        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 100%; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); margin: 0; padding: 10px; color: #333; -webkit-tap-highlight-color: transparent; }
         
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); margin-bottom: 20px; padding-bottom: 15px; }
-        h1 { color: var(--primary); font-size: 22px; margin: 0; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        header { border-bottom: 2px solid var(--primary); margin-bottom: 15px; padding-bottom: 10px; }
+        h1 { color: var(--primary); font-size: 18px; margin: 0; text-align: center; }
 
-        .search-area { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 15px; background: #f1f3f5; border-radius: 8px; }
-        .search-row { display: flex; gap: 10px; }
-        select, input { padding: 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 15px; }
-        select { background-color: white; width: 250px; cursor: pointer; }
-        input { flex: 1; }
-        button { padding: 12px 25px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        button:hover { background: var(--accent); }
+        .search-area { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; padding: 12px; background: #f1f3f5; border-radius: 8px; }
+        .search-row { display: flex; flex-direction: column; gap: 8px; }
+        
+        select, input { width: 100% !important; padding: 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 15px; }
 
-        .table-wrapper { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; min-width: 1200px; font-size: 13px; }
-        th { background: #e9ecef; padding: 12px; border-bottom: 2px solid var(--border); text-align: left; position: sticky; top: 0; white-space: nowrap; }
-        td { padding: 10px 12px; border-bottom: 1px solid #eee; white-space: nowrap; }
-        tr:hover { background-color: #f1f8ff; }
+        .table-wrapper { overflow-x: auto; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        
+        @media (min-width: 768px) {
+            .search-row { flex-direction: row; }
+            button { width: auto; }
+            h1 { font-size: 22px; text-align: left; }
+            body { padding: 20px; }
+        }
 
-        .name-link { color: var(--primary); font-weight: 700; cursor: pointer; text-decoration: underline; }
-        .badge { background: #eee; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+        /* 모바일 카드 리스트 스타일 */
+        #memberTableBody tr { 
+            display: flex; flex-direction: column; margin-bottom: 15px; 
+            border: 1px solid var(--border); border-radius: 8px; background: #fff; padding: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        #memberTableBody td { border: none; padding: 6px 0; display: flex; justify-content: space-between; align-items: center; white-space: normal; }
+        #memberTableBody td::before { content: attr(data-label); font-weight: bold; color: #666; font-size: 12px; margin-right: 10px; }
+        
+        @media (min-width: 768px) {
+            #memberTableBody tr { display: table-row; }
+            #memberTableBody td { display: table-cell; border-bottom: 1px solid #eee; padding: 10px 12px; }
+            #memberTableBody td::before { display: none; }
+            thead { display: table-header-group; }
+        }
+        @media (max-width: 767px) {
+            thead { display: none; }
+        }
+
+        .name-link { color: var(--primary); font-weight: 700; font-size: 16px; text-decoration: underline; cursor: pointer; }
+        .badge { background: #eee; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
 
         /* 모달 스타일 */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); overflow-y: auto; }
-        .modal-content { background: white; margin: 50px auto; width: 700px; border-radius: 8px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
-        .modal-header { background: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: center; align-items: center; position: relative; }
-        .modal-header h2 { font-size: 18px; margin: 0; }
-        .close-btn { position: absolute; right: 20px; font-size: 24px; color: white; cursor: pointer; background: none; border: none; }
-        
-        .detail-table { width: 100%; border-collapse: collapse; border-top: 1px solid var(--border); }
-        .detail-table th { background: #f8f9fa; width: 30%; padding: 12px 20px; border-bottom: 1px solid var(--border); color: #666; font-weight: 500; text-align: left; }
-        .detail-table td { padding: 12px 20px; border-bottom: 1px solid var(--border); color: #111; font-size: 14px; white-space: normal; }
-        .modal-footer { padding: 20px; text-align: center; }
-        .footer-close { padding: 8px 30px; border: 1px solid var(--primary); color: var(--primary); background: white; font-weight: bold; cursor: pointer; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); }
+        .modal-content { 
+            background: white; position: absolute; bottom: 0; width: 100%; 
+            border-radius: 20px 20px 0 0; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        .loading { text-align: center; padding: 50px; display: none; font-size: 18px; color: var(--primary); }
+        @media (min-width: 768px) {
+            .modal-content { position: relative; margin: 50px auto; width: 600px; border-radius: 8px; bottom: auto; }
+        }
+
+        .modal-header { background: var(--primary); color: white; padding: 15px; position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; }
+        .detail-table { width: 100%; border-collapse: collapse; }
+        .detail-table th { background: #f8f9fa; width: 35%; padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; text-align: left; color: #666; }
+        .detail-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; line-height: 1.5; color: #111; }
+
+        .loading { text-align: center; padding: 30px; font-size: 16px; color: var(--primary); }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>🏛️ 제22대 국회 인적사항 통합 검색</h1>
+        <h1>🏛️ 제22대 국회 인적사항 검색</h1>
     </header>
 
     <div class="search-area">
@@ -57,12 +83,13 @@
             <select id="committeeSelect" onchange="handleFilter()">
                 <option value="">전체 위원회</option>
                 <option value="문화체육관광위원회">문화체육관광위원회</option>
-                <option value="국방위원회">국방위원회</option>
-                <option value="기획재정위원회">기획재정위원회</option>
                 <option value="법제사법위원회">법제사법위원회</option>
+                <option value="정무위원회">정무위원회</option>
+                <option value="기획재정위원회">기획재정위원회</option>
                 <option value="교육위원회">교육위원회</option>
                 <option value="과학기술정보방송통신위원회">과학기술정보방송통신위원회</option>
                 <option value="외교통일위원회">외교통일위원회</option>
+                <option value="국방위원회">국방위원회</option>
                 <option value="행정안전위원회">행정안전위원회</option>
                 <option value="농림축산식품해양수산위원회">농림축산식품해양수산위원회</option>
                 <option value="산업통상자원중소벤처기업위원회">산업통상자원중소벤처기업위원회</option>
@@ -72,25 +99,22 @@
                 <option value="정보위원회">정보위원회</option>
                 <option value="여성가족위원회">여성가족위원회</option>
             </select>
-            <input type="text" id="unifiedSearch" placeholder="의원명, 보좌관, 선임비서관, 비서관 이름을 입력하세요" onkeyup="if(window.event.keyCode==13){handleFilter()}">
-            <button onclick="handleFilter()">통합 검색</button>
+            <input type="text" id="unifiedSearch" placeholder="이름, 보좌관 등 검색" onkeyup="if(window.event.keyCode==13){handleFilter()}">
+            <button onclick="handleFilter()">검색</button>
         </div>
     </div>
 
-    <div id="loading" class="loading">📡 데이터를 불러오고 있습니다...</div>
-
+    <div id="loading" class="loading" style="display:none;">📡 데이터를 분석 중입니다...</div>
+    
     <div class="table-wrapper">
-        <table>
+        <table id="pcTableHead">
             <thead>
                 <tr>
-                    <th>순번</th>
                     <th>성명</th>
                     <th>정당</th>
                     <th>선거구</th>
-                    <th>소속 위원회</th>
-                    <th>전화번호</th>
+                    <th>사무실 호실</th>
                     <th>보좌관</th>
-                    <th>상세</th>
                 </tr>
             </thead>
             <tbody id="memberTableBody"></tbody>
@@ -101,13 +125,13 @@
 <div id="detailModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>상세내용</h2>
-            <button class="close-btn" onclick="closeModal()">×</button>
+            <span></span>
+            <strong>의원 상세 정보</strong>
+            <span onclick="closeModal()" style="cursor:pointer; font-size:24px; padding: 0 10px;">&times;</span>
         </div>
-        <table class="detail-table" id="detailContent">
-            </table>
-        <div class="modal-footer">
-            <button class="footer-close" onclick="closeModal()">닫기</button>
+        <table class="detail-table" id="detailContent"></table>
+        <div style="padding: 20px; text-align: center; background: #f8f9fa;">
+            <button onclick="closeModal()" style="background:#fff; color:var(--primary); border:1px solid var(--primary); width: 120px;">닫기</button>
         </div>
     </div>
 </div>
@@ -120,7 +144,8 @@
     window.onload = () => fetchAllAssemblyData();
 
     async function fetchAllAssemblyData() {
-        document.getElementById('loading').style.display = 'block';
+        const loader = document.getElementById('loading');
+        loader.style.display = 'block';
         try {
             const response = await fetch(`${ENDPOINT}?KEY=${API_KEY}&Type=json&pIndex=1&pSize=500`);
             const data = await response.json();
@@ -128,72 +153,60 @@
                 allMembers = data.nwvrqwxyaytdsfvhu[1].row;
                 renderTable(allMembers);
             }
-        } catch (error) {
-            console.error('API Error:', error);
-            alert('데이터 로드 실패');
-        } finally {
-            document.getElementById('loading').style.display = 'none';
+        } catch (error) { 
+            console.error(error);
+            alert('데이터 로드 실패'); 
+        } finally { 
+            loader.style.display = 'none'; 
         }
     }
 
     function handleFilter() {
-        const committeeQuery = document.getElementById('committeeSelect').value;
-        const textQuery = document.getElementById('unifiedSearch').value.trim().toLowerCase();
+        const committee = document.getElementById('committeeSelect').value;
+        const text = document.getElementById('unifiedSearch').value.trim().toLowerCase();
         
         const filtered = allMembers.filter(m => {
-            const matchesCommittee = !committeeQuery || (m.CMITS && m.CMITS.includes(committeeQuery));
-            const matchesText = !textQuery || 
-                [m.HG_NM, m.STAFF, m.SECRETARY, m.SECRETARY2].some(val => val && val.toLowerCase().includes(textQuery));
-            return matchesCommittee && matchesText;
+            const mComm = !committee || (m.CMITS && m.CMITS.includes(committee));
+            const mText = !text || [m.HG_NM, m.STAFF, m.SECRETARY, m.SECRETARY2].some(v => v && v.toLowerCase().includes(text));
+            return mComm && mText;
         });
         renderTable(filtered);
     }
 
     function renderTable(data) {
-        const tbody = document.getElementById('memberTableBody');
-        tbody.innerHTML = data.map((item, index) => `
+        const container = document.getElementById('memberTableBody');
+        if(data.length === 0) {
+            container.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:50px;">결과가 없습니다.</td></tr>';
+            return;
+        }
+
+        container.innerHTML = data.map(item => `
             <tr>
-                <td>${index + 1}</td>
-                <td class="name-link" onclick="openModal('${item.MONA_CD}')">${item.HG_NM}</td>
-                <td><span class="badge">${item.POLY_NM}</span></td>
-                <td>${item.ORIG_NM}</td>
-                <td>${(item.CMITS || '').split(',')[0]}...</td>
-                <td>${item.TEL_NO || '-'}</td>
-                <td>${item.STAFF || '-'}</td>
-                <td><button onclick="openModal('${item.MONA_CD}')" style="padding:4px 8px; font-size:11px;">보기</button></td>
+                <td data-label="성명"><span class="name-link" onclick="openModal('${item.MONA_CD}')">${item.HG_NM}</span></td>
+                <td data-label="정당"><span class="badge">${item.POLY_NM}</span></td>
+                <td data-label="선거구">${item.ORIG_NM}</td>
+                <td data-label="사무실 호실">${item.ASSEM_ADDR || '-'}</td>
+                <td data-label="보좌관" style="font-size:12px; color:#666;">${item.STAFF || '-'}</td>
             </tr>
         `).join('');
     }
 
     function openModal(monaCd) {
         const item = allMembers.find(m => m.MONA_CD === monaCd);
-        if (!item) return;
+        if(!item) return;
 
-        const content = `
-            <tr><th>번호</th><td>${item.MONA_CD || '-'}</td></tr>
-            <tr><th>한자명</th><td>${item.HJ_NM || '-'}</td></tr>
-            <tr><th>영문명칭</th><td>${item.ENG_NM || '-'}</td></tr>
-            <tr><th>음/양력</th><td>${item.BTH_GBN_NM || '-'}</td></tr>
-            <tr><th>생년월일</th><td>${item.BTH_DATE || '-'}</td></tr>
-            <tr><th>정당명</th><td>${item.POLY_NM || '-'}</td></tr>
-            <tr><th>선거구</th><td>${item.ORIG_NM || '-'}</td></tr>
-            <tr><th>대표 위원회</th><td>${item.CMIT_NM || '-'}</td></tr>
-            <tr><th>재선</th><td>${item.REELE_GBN_NM || '-'}</td></tr>
-            <tr><th>당선</th><td>${item.UNITS || '-'}</td></tr>
-            <tr><th>소속 위원회 목록</th><td>${item.CMITS || '-'}</td></tr>
-            <tr><th>성별</th><td>${item.SEX_GBN_NM || '-'}</td></tr>
-            <tr><th>전화번호</th><td>${item.TEL_NO || '-'}</td></tr>
-            <tr><th>사무실 호실</th><td>${item.ASSEM_ADDR || '-'}</td></tr>
-            <tr><th>이메일</th><td>${item.E_MAIL || '-'}</td></tr>
-            <tr><th>홈페이지</th><td>${item.HOMEPAGE ? `<a href="${item.HOMEPAGE}" target="_blank">${item.HOMEPAGE}</a>` : '-'}</td></tr>
-            <tr><th>보좌관</th><td>${item.STAFF || '-'}</td></tr>
-            <tr><th>선임비서관</th><td>${item.SECRETARY || '-'}</td></tr>
-            <tr><th>비서관</th><td>${item.SECRETARY2 || '-'}</td></tr>
-        `;
+        const fields = [
+            ["한자명", item.HJ_NM], ["정당", item.POLY_NM], ["선거구", item.ORIG_NM],
+            ["소속 위원회", item.CMITS], ["생년월일", item.BTH_DATE], ["전화번호", item.TEL_NO],
+            ["사무실 호실", item.ASSEM_ADDR], ["이메일", item.E_MAIL], 
+            ["홈페이지", item.HOMEPAGE ? `<a href="${item.HOMEPAGE}" target="_blank" style="color:var(--accent)">바로가기</a>` : '-'],
+            ["보좌관", item.STAFF], ["선임비서관", item.SECRETARY], ["비서관", item.SECRETARY2]
+        ];
         
-        document.getElementById('detailContent').innerHTML = content;
+        document.getElementById('detailContent').innerHTML = fields.map(f => 
+            `<tr><th>${f[0]}</th><td>${f[1] || '-'}</td></tr>`).join('');
         document.getElementById('detailModal').style.display = 'block';
-        document.body.style.overflow = 'hidden'; // 배경 스크롤 방지
+        document.body.style.overflow = 'hidden';
     }
 
     function closeModal() {
@@ -201,12 +214,9 @@
         document.body.style.overflow = 'auto';
     }
 
-    // 모달 외부 클릭 시 닫기
     window.onclick = function(event) {
-        const modal = document.getElementById('detailModal');
-        if (event.target == modal) closeModal();
+        if (event.target == document.getElementById('detailModal')) closeModal();
     }
 </script>
-
 </body>
 </html>
