@@ -8,97 +8,44 @@
         :root { --primary: #003478; --naver: #03cf5d; --yt: #ff0000; --bg: #f4f7fa; }
         * { box-sizing: border-box; font-family: 'Pretendard', sans-serif; }
         
-        /* 기본 레이아웃: 모바일 우선(Mobile First) */
-        body { 
-            background: var(--bg); 
-            margin: 0; 
-            padding: 10px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 15px; 
-            min-height: 100vh;
-        }
+        body { background: var(--bg); margin: 0; padding: 10px; display: flex; flex-direction: column; gap: 15px; min-height: 100vh; }
 
-        /* [1단계] 명단 영역 */
-        .step-1-container { 
-            background: white; 
-            border-radius: 12px; 
-            padding: 15px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-            height: 400px; /* 모바일에서 고정 높이 확보 */
-            display: flex; 
-            flex-direction: column; 
-        }
-
-        .control-panel { 
-            display: flex; 
-            flex-wrap: wrap; /* 모바일에서 요소가 넘치면 줄바꿈 */
-            gap: 10px; 
-            margin-bottom: 12px; 
-            padding: 12px; 
-            background: #f1f3f5; 
-            border-radius: 8px; 
-            align-items: center; 
-        }
+        /* [1단계] 명단 영역: 간소화된 테이블 */
+        .step-1-container { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); height: 400px; display: flex; flex-direction: column; }
+        .control-panel { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; padding: 12px; background: #f1f3f5; border-radius: 8px; align-items: center; }
+        .control-panel h2 { font-size: 16px; margin: 0; color: var(--primary); }
+        select { flex: 1; min-width: 150px; padding: 10px; border: 1px solid #ced4da; border-radius: 6px; font-size: 14px; font-weight: bold; }
         
-        .control-panel h2 { font-size: 16px; margin: 0; color: var(--primary); white-space: nowrap; }
-        
-        select { 
-            flex: 1; 
-            min-width: 150px; 
-            padding: 10px; 
-            border: 1px solid #ced4da; 
-            border-radius: 6px; 
-            font-size: 14px; 
-            font-weight: bold; 
-            cursor: pointer; 
-        }
-        
-        /* 테이블 반응형 설정 */
-        .table-wrapper { 
-            overflow: auto; 
-            flex: 1; 
-            border: 1px solid #dee2e6; 
-            border-radius: 8px; 
-            -webkit-overflow-scrolling: touch; /* iOS 부드러운 스크롤 */
-        }
-        
-        table { width: 100%; border-collapse: collapse; min-width: 1200px; font-size: 13px; }
-        th { background: #e9ecef; padding: 12px; border-bottom: 2px solid #dee2e6; text-align: left; position: sticky; top: 0; z-index: 10; }
-        td { padding: 12px; border-bottom: 1px solid #eee; white-space: nowrap; cursor: pointer; }
+        .table-wrapper { overflow: auto; flex: 1; border: 1px solid #dee2e6; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: center; }
+        th { background: #e9ecef; padding: 12px; border-bottom: 2px solid #dee2e6; position: sticky; top: 0; z-index: 10; }
+        td { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
         tr:hover { background-color: #f1f8ff; }
         tr.active { background-color: #e8f0fe !important; font-weight: bold; border-left: 5px solid var(--primary); }
-        .staff-cell { color: #555; font-size: 11px; white-space: normal; min-width: 150px; line-height: 1.4; }
 
-        /* [2단계] 뉴스 영역: 기본 1열(모바일) */
-        .step-2-container { 
-            display: grid; 
-            grid-template-columns: 1fr; 
-            gap: 12px; 
-            padding-bottom: 20px;
-        }
+        /* 모달 팝업 스타일 */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: white; border-radius: 15px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; padding: 25px; position: relative; box-shadow: 0 5px 30px rgba(0,0,0,0.3); }
+        .modal-header { border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .close-btn { font-size: 28px; cursor: pointer; border: none; background: none; color: #888; line-height: 1; }
+        .info-grid { display: grid; grid-template-columns: 80px 1fr; gap: 12px; line-height: 1.6; font-size: 14px; }
+        .info-label { font-weight: bold; color: #666; }
+        .info-value { color: #333; }
 
-        .monitor-col { 
-            background: #fff; 
-            border-radius: 12px; 
-            padding: 15px; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06); 
-            display: flex; 
-            flex-direction: column; 
-            max-height: 500px; /* 모바일에서 너무 길어지지 않게 조절 */
-        }
-
+        /* [2단계] 뉴스 영역: 반응형 그리드 */
+        .step-2-container { display: grid; grid-template-columns: 1fr; gap: 12px; padding-bottom: 20px; }
+        .monitor-col { background: #fff; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; max-height: 500px; }
         .col-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #eee; }
         .content-scroll { flex: 1; overflow-y: auto; }
-
+        
         .item { padding: 12px 0; border-bottom: 1px solid #f1f1f1; text-decoration: none; color: inherit; display: block; }
         .item-title { font-size: 0.95rem; font-weight: 600; line-height: 1.4; margin-bottom: 4px; }
         .yt-thumb { width: 100%; aspect-ratio: 16/9; background-size: cover; border-radius: 8px; margin-bottom: 8px; background-color: #000; }
 
-        /* 데스크톱 화면 설정 (너비 1024px 이상) */
+        /* 데스크톱 환경 설정 */
         @media (min-width: 1024px) {
             body { height: 100vh; overflow: hidden; padding: 15px; }
-            .step-1-container { height: 45%; min-height: 350px; }
+            .step-1-container { height: 40%; min-height: 300px; }
             .step-2-container { flex: 1; grid-template-columns: 1fr 1fr 1fr; min-height: 0; }
             .monitor-col { max-height: none; }
         }
@@ -129,11 +76,6 @@
                 <option value="정보위원회">정보위원회</option>
                 <option value="여성가족위원회">여성가족위원회</option>
             </optgroup>
-            <optgroup label="특별위원회">
-                <option value="예산결산특별위원회">예산결산특별위원회</option>
-                <option value="윤리특별위원회">윤리특별위원회</option>
-                <option value="인사청문특별위원회">인사청문특별위원회</option>
-            </optgroup>
         </select>
         <span id="load-status" style="font-size:12px; color:var(--primary); font-weight:bold;"></span>
     </div>
@@ -142,23 +84,25 @@
         <table>
             <thead>
                 <tr>
-                    <th>순번</th>
-                    <th>위원회명</th>
                     <th>구성</th>
                     <th>성명</th>
-                    <th>성명(한자)</th>
                     <th>정당</th>
                     <th>선거구</th>
-                    <th>전화번호</th>
-                    <th>이메일</th>
-                    <th>호실</th>
-                    <th>보좌관</th>
-                    <th>비서관</th>
-                    <th>비서</th>
                 </tr>
             </thead>
             <tbody id="memberTbody"></tbody>
         </table>
+    </div>
+</div>
+
+<div id="infoModal" class="modal" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 id="modalName" style="margin:0; color:var(--primary);">의원 상세 정보</h3>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+        </div>
+        <div id="modalBody" class="info-grid">
+            </div>
     </div>
 </div>
 
@@ -193,47 +137,57 @@
             if (data.nktulghcadyhmiqxi) {
                 currentMembers = data.nktulghcadyhmiqxi[1].row;
                 currentMembers.sort((a, b) => a.HG_NM.localeCompare(b.HG_NM, 'ko'));
-                
                 status.innerText = `✅ ${currentMembers.length}명 완료`;
 
                 tbody.innerHTML = currentMembers.map((m, idx) => `
-                    <tr id="row_${idx}" onclick="startMonitor(${idx})">
-                        <td>${idx + 1}</td>
-                        <td>${m.DEPT_NM}</td>
+                    <tr id="row_${idx}" onclick="handleRowClick(${idx})">
                         <td><span style="background:#eee; padding:2px 6px; border-radius:4px;">${m.JOB_RES_NM || '위원'}</span></td>
-                        <td style="font-weight:bold;">${m.HG_NM}</td>
-                        <td>${m.HJ_NM || '-'}</td>
+                        <td style="font-weight:bold; color:var(--primary);">${m.HG_NM}</td>
                         <td>${m.POLY_NM}</td>
                         <td>${m.ORIG_NM}</td>
-                        <td style="color:var(--primary); font-weight:500;">${m.ASSEM_TEL || '-'}</td>
-                        <td>${m.ASSEM_EMAIL || '-'}</td>
-                        <td>${m.ROOM_NO ? m.ROOM_NO + '호' : '-'}</td>
-                        <td class="staff-cell">${m.STAFF || '-'}</td>
-                        <td class="staff-cell">${m.SECRETARY || '-'}</td>
-                        <td class="staff-cell">${m.SECRETARY2 || '-'}</td>
                     </tr>
                 `).join('');
-
                 if(currentMembers.length > 0) startMonitor(0);
             }
         } catch (e) { status.innerText = "❌ 실패"; }
     }
 
+    function handleRowClick(idx) {
+        startMonitor(idx);
+        showModal(idx);
+    }
+
     function startMonitor(idx) {
         document.querySelectorAll('tr').forEach(tr => tr.classList.remove('active'));
         const activeRow = document.getElementById(`row_${idx}`);
-        if(activeRow) {
-            activeRow.classList.add('active');
-            // 선택 시 모바일에서 뉴스 영역으로 부드럽게 스크롤 (필요시 사용)
-            // if(window.innerWidth < 1024) document.querySelector('.step-2-container').scrollIntoView({behavior: 'smooth'});
-        }
+        if(activeRow) activeRow.classList.add('active');
 
         const m = currentMembers[idx];
         const query = `"${m.POLY_NM}" "${m.HG_NM}"`; 
-
         fetchNaver(query);
         fetchGoogle(query);
         fetchYoutube(query);
+    }
+
+    function showModal(idx) {
+        const m = currentMembers[idx];
+        document.getElementById('modalName').innerText = `${m.HG_NM} (${m.HJ_NM})`;
+        document.getElementById('modalBody').innerHTML = `
+            <div class="info-label">정당</div><div class="info-value">${m.POLY_NM}</div>
+            <div class="info-label">지역구</div><div class="info-value">${m.ORIG_NM}</div>
+            <div class="info-label">전화번호</div><div class="info-value">${m.ASSEM_TEL || '-'}</div>
+            <div class="info-label">이메일</div><div class="info-value">${m.ASSEM_EMAIL || '-'}</div>
+            <div class="info-label">사무실</div><div class="info-value">${m.ROOM_NO ? m.ROOM_NO + '호' : '-'}</div>
+            <hr style="grid-column: span 2; width:100%; border:0; border-top:1px solid #eee; margin:5px 0;">
+            <div class="info-label">보좌관</div><div class="info-value">${m.STAFF || '-'}</div>
+            <div class="info-label">비서관</div><div class="info-value">${m.SECRETARY || '-'}</div>
+            <div class="info-label">비서</div><div class="info-value">${m.SECRETARY2 || '-'}</div>
+        `;
+        document.getElementById('infoModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('infoModal').style.display = 'none';
     }
 
     async function fetchNaver(q) {
