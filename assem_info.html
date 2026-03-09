@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제22대 국회 의원실 통합 검색 시스템</title>
+    <title>제22대 국회 통합 인적사항 관리 시스템</title>
     <style>
         :root { --primary: #003478; --accent: #0056b3; --bg: #f8f9fa; --border: #dee2e6; }
         body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: #333; }
@@ -12,7 +12,6 @@
         header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); margin-bottom: 20px; padding-bottom: 15px; }
         h1 { color: var(--primary); font-size: 22px; margin: 0; }
 
-        /* 검색 및 정렬 영역 반응형 보완 */
         .search-area { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 15px; background: #f1f3f5; border-radius: 8px; }
         .search-row { display: flex; gap: 10px; }
         select, input { padding: 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 15px; }
@@ -20,17 +19,6 @@
         input { flex: 1; }
         button { padding: 12px 25px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
         button:hover { background: var(--accent); }
-
-        .list-header { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 10px; gap: 8px; }
-        .sort-select-small { padding: 6px 10px; font-size: 13px; width: auto; min-width: 160px; height: 35px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; }
-
-        /* 모바일 대응 미디어 쿼리 */
-        @media (max-width: 768px) {
-            .search-row { flex-direction: column; }
-            select, input, button { width: 100% !important; }
-            .list-header { flex-direction: column; align-items: flex-start; }
-            .sort-select-small { width: 100% !important; }
-        }
 
         .table-wrapper { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
         table { width: 100%; border-collapse: collapse; min-width: 1200px; font-size: 13px; }
@@ -43,7 +31,7 @@
 
         /* 모달 스타일 */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); overflow-y: auto; }
-        .modal-content { background: white; margin: 50px auto; width: 90%; max-width: 700px; border-radius: 8px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+        .modal-content { background: white; margin: 50px auto; width: 700px; border-radius: 8px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
         .modal-header { background: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: center; align-items: center; position: relative; }
         .modal-header h2 { font-size: 18px; margin: 0; }
         .close-btn { position: absolute; right: 20px; font-size: 24px; color: white; cursor: pointer; background: none; border: none; }
@@ -69,33 +57,24 @@
             <select id="committeeSelect" onchange="handleFilter()">
                 <option value="">전체 위원회</option>
                 <option value="문화체육관광위원회">문화체육관광위원회</option>
-                <option value="과학기술정보방송통신위원회">과학기술정보방송통신위원회</option>
-                <option value="교육위원회">교육위원회</option>
                 <option value="국방위원회">국방위원회</option>
-                <option value="국토교통위원회">국토교통위원회</option>
                 <option value="기획재정위원회">기획재정위원회</option>
-                <option value="농림축산식품해양수산위원회">농림축산식품해양수산위원회</option>
                 <option value="법제사법위원회">법제사법위원회</option>
-                <option value="보건복지위원회">보건복지위원회</option>
-                <option value="산업통상자원중소벤처기업위원회">산업통상자원중소벤처기업위원회</option>
-                <option value="여성가족위원회">여성가족위원회</option>
+                <option value="교육위원회">교육위원회</option>
+                <option value="과학기술정보방송통신위원회">과학기술정보방송통신위원회</option>
                 <option value="외교통일위원회">외교통일위원회</option>
-                <option value="정보위원회">정보위원회</option>
                 <option value="행정안전위원회">행정안전위원회</option>
+                <option value="농림축산식품해양수산위원회">농림축산식품해양수산위원회</option>
+                <option value="산업통상자원중소벤처기업위원회">산업통상자원중소벤처기업위원회</option>
+                <option value="보건복지위원회">보건복지위원회</option>
                 <option value="환경노동위원회">환경노동위원회</option>
+                <option value="국토교통위원회">국토교통위원회</option>
+                <option value="정보위원회">정보위원회</option>
+                <option value="여성가족위원회">여성가족위원회</option>
             </select>
-            <input type="text" id="unifiedSearch" placeholder="의원명, 보좌진 이름을 입력하세요" onkeyup="if(window.event.keyCode==13){handleFilter()}">
+            <input type="text" id="unifiedSearch" placeholder="의원명, 보좌관, 선임비서관, 비서관 이름을 입력하세요" onkeyup="if(window.event.keyCode==13){handleFilter()}">
             <button onclick="handleFilter()">통합 검색</button>
         </div>
-    </div>
-
-    <div class="list-header">
-        <span style="font-size: 13px; color: #666; font-weight: bold;">정렬:</span>
-        <select id="sortSelect" class="sort-select-small" onchange="handleFilter()">
-            <option value="NAME_ASC">이름 가나다순</option>
-            <option value="ROOM_ASC">사무실 호실순</option>
-            <option value="UNITS_DESC">당선 횟수순</option>
-        </select>
     </div>
 
     <div id="loading" class="loading">📡 데이터를 불러오고 있습니다...</div>
@@ -125,7 +104,8 @@
             <h2>상세내용</h2>
             <button class="close-btn" onclick="closeModal()">×</button>
         </div>
-        <table class="detail-table" id="detailContent"></table>
+        <table class="detail-table" id="detailContent">
+            </table>
         <div class="modal-footer">
             <button class="footer-close" onclick="closeModal()">닫기</button>
         </div>
@@ -146,7 +126,7 @@
             const data = await response.json();
             if (data.nwvrqwxyaytdsfvhu) {
                 allMembers = data.nwvrqwxyaytdsfvhu[1].row;
-                handleFilter();
+                renderTable(allMembers);
             }
         } catch (error) {
             console.error('API Error:', error);
@@ -159,30 +139,13 @@
     function handleFilter() {
         const committeeQuery = document.getElementById('committeeSelect').value;
         const textQuery = document.getElementById('unifiedSearch').value.trim().toLowerCase();
-        const sortType = document.getElementById('sortSelect').value;
         
-        let filtered = allMembers.filter(m => {
+        const filtered = allMembers.filter(m => {
             const matchesCommittee = !committeeQuery || (m.CMITS && m.CMITS.includes(committeeQuery));
             const matchesText = !textQuery || 
                 [m.HG_NM, m.STAFF, m.SECRETARY, m.SECRETARY2].some(val => val && val.toLowerCase().includes(textQuery));
             return matchesCommittee && matchesText;
         });
-
-        filtered.sort((a, b) => {
-            if (sortType === 'NAME_ASC') return a.HG_NM.localeCompare(b.HG_NM, 'ko');
-            if (sortType === 'ROOM_ASC') {
-                const roomA = parseInt((a.ASSEM_ADDR || '0').replace(/[^0-9]/g, '')) || 0;
-                const roomB = parseInt((b.ASSEM_ADDR || '0').replace(/[^0-9]/g, '')) || 0;
-                return roomA - roomB;
-            }
-            if (sortType === 'UNITS_DESC') {
-                const unitsA = (a.UNITS || '').split(',').length;
-                const unitsB = (b.UNITS || '').split(',').length;
-                return unitsB - unitsA;
-            }
-            return 0;
-        });
-
         renderTable(filtered);
     }
 
@@ -194,7 +157,7 @@
                 <td class="name-link" onclick="openModal('${item.MONA_CD}')">${item.HG_NM}</td>
                 <td><span class="badge">${item.POLY_NM}</span></td>
                 <td>${item.ORIG_NM}</td>
-                <td>${(item.CMITS || '').split(',')[0]}${item.CMITS && item.CMITS.includes(',') ? '...' : ''}</td>
+                <td>${(item.CMITS || '').split(',')[0]}...</td>
                 <td>${item.TEL_NO || '-'}</td>
                 <td>${item.STAFF || '-'}</td>
                 <td><button onclick="openModal('${item.MONA_CD}')" style="padding:4px 8px; font-size:11px;">보기</button></td>
@@ -210,14 +173,19 @@
             <tr><th>번호</th><td>${item.MONA_CD || '-'}</td></tr>
             <tr><th>한자명</th><td>${item.HJ_NM || '-'}</td></tr>
             <tr><th>영문명칭</th><td>${item.ENG_NM || '-'}</td></tr>
-            <tr><th>생년월일</th><td>${item.BTH_DATE || '-'} (${item.BTH_GBN_NM || '-'})</td></tr>
+            <tr><th>음/양력</th><td>${item.BTH_GBN_NM || '-'}</td></tr>
+            <tr><th>생년월일</th><td>${item.BTH_DATE || '-'}</td></tr>
             <tr><th>정당명</th><td>${item.POLY_NM || '-'}</td></tr>
             <tr><th>선거구</th><td>${item.ORIG_NM || '-'}</td></tr>
-            <tr><th>당선횟수</th><td>${item.UNITS || '-'} (${item.REELE_GBN_NM || '-'})</td></tr>
-            <tr><th>소속 위원회</th><td>${item.CMITS || '-'}</td></tr>
+            <tr><th>대표 위원회</th><td>${item.CMIT_NM || '-'}</td></tr>
+            <tr><th>재선</th><td>${item.REELE_GBN_NM || '-'}</td></tr>
+            <tr><th>당선</th><td>${item.UNITS || '-'}</td></tr>
+            <tr><th>소속 위원회 목록</th><td>${item.CMITS || '-'}</td></tr>
+            <tr><th>성별</th><td>${item.SEX_GBN_NM || '-'}</td></tr>
             <tr><th>전화번호</th><td>${item.TEL_NO || '-'}</td></tr>
-            <tr><th>사무실</th><td>${item.ASSEM_ADDR || '-'}</td></tr>
+            <tr><th>사무실 호실</th><td>${item.ASSEM_ADDR || '-'}</td></tr>
             <tr><th>이메일</th><td>${item.E_MAIL || '-'}</td></tr>
+            <tr><th>홈페이지</th><td>${item.HOMEPAGE ? `<a href="${item.HOMEPAGE}" target="_blank">${item.HOMEPAGE}</a>` : '-'}</td></tr>
             <tr><th>보좌관</th><td>${item.STAFF || '-'}</td></tr>
             <tr><th>선임비서관</th><td>${item.SECRETARY || '-'}</td></tr>
             <tr><th>비서관</th><td>${item.SECRETARY2 || '-'}</td></tr>
@@ -225,7 +193,7 @@
         
         document.getElementById('detailContent').innerHTML = content;
         document.getElementById('detailModal').style.display = 'block';
-        document.body.style.overflow = 'hidden';
+        document.body.style.overflow = 'hidden'; // 배경 스크롤 방지
     }
 
     function closeModal() {
@@ -233,8 +201,10 @@
         document.body.style.overflow = 'auto';
     }
 
+    // 모달 외부 클릭 시 닫기
     window.onclick = function(event) {
-        if (event.target == document.getElementById('detailModal')) closeModal();
+        const modal = document.getElementById('detailModal');
+        if (event.target == modal) closeModal();
     }
 </script>
 
