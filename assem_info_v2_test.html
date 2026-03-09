@@ -30,7 +30,7 @@
         .sort-select { width: auto !important; height: 30px !important; padding: 0 8px !important; font-size: 12px !important; border-radius: 4px; border: 1px solid var(--border); }
 
         .table-wrapper { overflow-x: auto; border-radius: 8px; }
-        <table> { width: 100%; border-collapse: collapse; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
         
         @media (min-width: 768px) {
             .search-row { flex-direction: row; }
@@ -129,7 +129,7 @@
         </div>
         <table class="detail-table" id="detailContent"></table>
         
-        <button id="btnSeminar" class="seminar-trigger-btn">행사일정 보기</button>
+        <button id="btnSeminar" class="seminar-trigger-btn">행사일정 열기</button>
 
         <div id="seminarSection" class="seminar-section">
             <div id="seminarList"></div>
@@ -197,7 +197,7 @@
                         ${item.REELE_GNB_NM ? `<span class="reele-badge">${item.REELE_GNB_NM}</span>` : ''}
                     </div>
                 </td>
-                <td data-label="정당"><span class="badge" style="background:#eee; padding:2px 8px; border-radius:4px;">${item.POLY_NM || '-'}</span></td>
+                <td data-label="정당"><span style="background:#eee; padding:2px 8px; border-radius:4px;">${item.POLY_NM || '-'}</span></td>
                 <td data-label="사무실 호실">${item.ASSEM_ADDR || '-'}</td>
                 <td data-label="보좌관" style="font-size:12px; color:#666;">${item.STAFF || '-'}</td>
                 <td data-label="선임비서관" style="font-size:12px; color:#666;">${item.SECRETARY || '-'}</td>
@@ -209,9 +209,11 @@
         const item = allMembers.find(m => m.MONA_CD === monaCd);
         if(!item) return;
 
-        // 모달 열 때 이전 상태 초기화
         document.getElementById('seminarSection').style.display = 'none';
         document.getElementById('seminarList').innerHTML = '';
+        
+        // 모달 열 때 버튼 텍스트 초기화
+        document.getElementById('btnSeminar').innerText = '행사일정 열기';
 
         const unitInfo = item.UNITS ? `${item.REELE_GNB_NM || ''} (${item.UNITS})` : (item.REELE_GNB_NM || '-');
         const fields = [
@@ -224,7 +226,6 @@
         
         document.getElementById('detailContent').innerHTML = fields.map(f => `<tr><th>${f[0]}</th><td>${f[1] || '-'}</td></tr>`).join('');
         
-        // 버튼 클릭 시 토글 함수 실행
         document.getElementById('btnSeminar').onclick = () => toggleSeminars(item.HG_NM);
         
         document.getElementById('detailModal').style.display = 'block';
@@ -234,15 +235,16 @@
     async function toggleSeminars(memberName) {
         const seminarSection = document.getElementById('seminarSection');
         const listDiv = document.getElementById('seminarList');
+        const btn = document.getElementById('btnSeminar');
 
-        // 내역이 이미 보이고 있다면 숨기기
         if (seminarSection.style.display === 'block') {
             seminarSection.style.display = 'none';
+            btn.innerText = '행사일정 열기';
             return;
         }
 
-        // 내역이 숨겨져 있다면 열고 데이터 로드
         seminarSection.style.display = 'block';
+        btn.innerText = '행사일정 닫기';
         listDiv.innerHTML = '<p style="font-size:13px; color:#666;">조회 중...</p>';
 
         try {
