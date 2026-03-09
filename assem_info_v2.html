@@ -60,7 +60,6 @@
         .detail-table th { background: #f8f9fa; width: 35%; padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; text-align: left; color: #666; }
         .detail-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; line-height: 1.5; }
 
-        /* 행사일정 버튼 스타일 (검색버튼과 동일한 안정감) */
         .seminar-trigger-btn { 
             background: #2c3e50; color: white; border: none; width: calc(100% - 30px); height: 40px; 
             margin: 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px;
@@ -116,8 +115,6 @@
     
     <div class="table-wrapper">
         <table>
-            <thead>
-            </thead>
             <tbody id="memberTableBody"></tbody>
         </table>
     </div>
@@ -132,7 +129,7 @@
         </div>
         <table class="detail-table" id="detailContent"></table>
         
-        <button id="btnSeminar" class="seminar-trigger-btn">행사일정 보기</button>
+        <button id="btnSeminar" class="seminar-trigger-btn">행사일정 열기</button>
 
         <div id="seminarSection" class="seminar-section">
             <div id="seminarList"></div>
@@ -200,7 +197,7 @@
                         ${item.REELE_GNB_NM ? `<span class="reele-badge">${item.REELE_GNB_NM}</span>` : ''}
                     </div>
                 </td>
-                <td data-label="정당"><span class="badge" style="background:#eee; padding:2px 8px; border-radius:4px;">${item.POLY_NM || '-'}</span></td>
+                <td data-label="정당"><span style="background:#eee; padding:2px 8px; border-radius:4px;">${item.POLY_NM || '-'}</span></td>
                 <td data-label="사무실 호실">${item.ASSEM_ADDR || '-'}</td>
                 <td data-label="보좌관" style="font-size:12px; color:#666;">${item.STAFF || '-'}</td>
                 <td data-label="선임비서관" style="font-size:12px; color:#666;">${item.SECRETARY || '-'}</td>
@@ -214,6 +211,9 @@
 
         document.getElementById('seminarSection').style.display = 'none';
         document.getElementById('seminarList').innerHTML = '';
+        
+        // 모달 열 때 버튼 텍스트 초기화
+        document.getElementById('btnSeminar').innerText = '행사일정 열기';
 
         const unitInfo = item.UNITS ? `${item.REELE_GNB_NM || ''} (${item.UNITS})` : (item.REELE_GNB_NM || '-');
         const fields = [
@@ -225,14 +225,26 @@
         ];
         
         document.getElementById('detailContent').innerHTML = fields.map(f => `<tr><th>${f[0]}</th><td>${f[1] || '-'}</td></tr>`).join('');
-        document.getElementById('btnSeminar').onclick = () => fetchSeminars(item.HG_NM);
+        
+        document.getElementById('btnSeminar').onclick = () => toggleSeminars(item.HG_NM);
+        
         document.getElementById('detailModal').style.display = 'block';
         document.body.style.overflow = 'hidden';
     }
 
-    async function fetchSeminars(memberName) {
+    async function toggleSeminars(memberName) {
+        const seminarSection = document.getElementById('seminarSection');
         const listDiv = document.getElementById('seminarList');
-        document.getElementById('seminarSection').style.display = 'block';
+        const btn = document.getElementById('btnSeminar');
+
+        if (seminarSection.style.display === 'block') {
+            seminarSection.style.display = 'none';
+            btn.innerText = '행사일정 열기';
+            return;
+        }
+
+        seminarSection.style.display = 'block';
+        btn.innerText = '행사일정 닫기';
         listDiv.innerHTML = '<p style="font-size:13px; color:#666;">조회 중...</p>';
 
         try {
@@ -251,7 +263,9 @@
             } else {
                 listDiv.innerHTML = '<p style="font-size:13px; color:#999; padding:10px 0;">진행 예정인 행사 일정이 없습니다.</p>';
             }
-        } catch (e) { listDiv.innerHTML = '데이터를 불러오는 중 오류가 발생했습니다.'; }
+        } catch (e) { 
+            listDiv.innerHTML = '데이터를 불러오는 중 오류가 발생했습니다.'; 
+        }
     }
 
     function closeModal() { document.getElementById('detailModal').style.display = 'none'; document.body.style.overflow = 'auto'; }
