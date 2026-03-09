@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>제22대 국회 의원실 검색</title>
+    <style>
+        :root { --primary: #003478; --accent: #0056b3; --bg: #f8f9fa; --border: #dee2e6; --input-height: 38px; }
+        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); margin: 0; padding: 10px; color: #333; -webkit-tap-highlight-color: transparent; }
+        
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        header { border-bottom: 2px solid var(--primary); margin-bottom: 15px; padding-bottom: 10px; }
+        h1 { color: var(--primary); font-size: 18px; margin: 0; text-align: center; }
+
+        .search-area { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; padding: 12px; background: #f1f3f5; border-radius: 8px; }
+        .search-row { display: flex; flex-direction: column; gap: 8px; }
+        
+        select, input, .search-btn { 
+            width: 100%; height: var(--input-height); padding: 0 12px; 
+            border: 1px solid #ced4da; border-radius: 6px; font-size: 14px; box-sizing: border-box; 
+        }
+        
+        .search-btn { 
+            background: var(--primary); color: white; border: none; cursor: pointer; 
+            font-weight: bold; display: flex; align-items: center; justify-content: center;
+        }
+
+        .sort-row { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+        .sort-select { width: auto !important; height: 30px !important; padding: 0 8px !important; font-size: 12px !important; border-radius: 4px; border: 1px solid var(--border); }
+
+        .table-wrapper { overflow-x: auto; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        
+        @media (min-width: 768px) {
+            .search-row { flex-direction: row; }
+            #committeeSelect { flex: 3; } #unifiedSearch { flex: 5.5; } .search-btn { flex: 1.5; }
+            h1 { font-size: 22px; text-align: left; }
+        }
+
+        #memberTableBody tr { display: flex; flex-direction: column; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 8px; background: #fff; padding: 12px; }
+        #memberTableBody td { border: none; padding: 6px 0; display: flex; justify-content: space-between; align-items: center; }
+        #memberTableBody td::before { content: attr(data-label); font-weight: bold; color: #666; font-size: 12px; }
+        
+        @media (min-width: 768px) {
+            #memberTableBody tr { display: table-row; }
+            #memberTableBody td { display: table-cell; border-bottom: 1px solid #eee; padding: 10px 12px; }
+            #memberTableBody td::before { display: none; }
+        }
+
+        .name-link { color: var(--primary); font-weight: 700; font-size: 16px; text-decoration: underline; cursor: pointer; }
+        .reele-badge { background: #e7f3ff; color: #0056b3; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-left: 5px; }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); }
+        .modal-content { background: white; position: absolute; bottom: 0; width: 100%; border-radius: 20px 20px 0 0; max-height: 90vh; overflow-y: auto; }
+        @media (min-width: 768px) { .modal-content { position: relative; margin: 30px auto; width: 600px; border-radius: 8px; bottom: auto; } }
+
+        .modal-header { background: var(--primary); color: white; padding: 15px; position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; }
+        .detail-table { width: 100%; border-collapse: collapse; }
+        .detail-table th { background: #f8f9fa; width: 35%; padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; text-align: left; color: #666; }
+        .detail-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; line-height: 1.5; }
+
+        /* 행사일정 버튼 스타일 (검색버튼과 동일한 안정감) */
+        .seminar-trigger-btn { 
+            background: #2c3e50; color: white; border: none; width: calc(100% - 30px); height: 40px; 
+            margin: 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px;
+        }
+        .seminar-section { display: none; padding: 0 15px 15px 15px; border-top: 1px solid #eee; }
+        .seminar-item { padding: 12px 0; border-bottom: 1px dotted #ccc; }
+        .seminar-title { color: var(--accent); font-weight: bold; cursor: pointer; text-decoration: underline; margin-bottom: 5px; }
+        .seminar-info { font-size: 12px; color: #777; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header><h1>🏛️ 제22대 국회 의원실 검색</h1></header>
+
+    <div class="search-area">
+        <div class="search-row">
+            <select id="committeeSelect" onchange="handleFilter()">
+                <option value="" selected>전체 위원회</option>
+                <option value="문화체육관광위원회">문화체육관광위원회</option>
+                <option value="과학기술정보방송통신위원회">과학기술정보방송통신위원회</option>
+                <option value="교육위원회">교육위원회</option>
+                <option value="국방위원회">국방위원회</option>
+                <option value="국회운영위원회">국회운영위원회</option>
+                <option value="기획재정위원회">기획재정위원회</option>
+                <option value="농림축산식품해양수산위원회">농림축산식품해양수산위원회</option>
+                <option value="법제사법위원회">법제사법위원회</option>
+                <option value="보건복지위원회">보건복지위원회</option>
+                <option value="산업통상자원중소벤처기업위원회">산업통상자원중소벤처기업위원회</option>
+                <option value="여성가족위원회">여성가족위원회</option>
+                <option value="예산결산특별위원회">예산결산특별위원회</option>
+                <option value="외교통일위원회">외교통일위원회</option>
+                <option value="윤리특별위원회">윤리특별위원회</option>
+                <option value="정무위원회">정무위원회</option>
+                <option value="정보위원회">정보위원회</option>
+                <option value="행정안전위원회">행정안전위원회</option>
+                <option value="환경노동위원회">환경노동위원회</option>
+            </select>
+            <input type="text" id="unifiedSearch" placeholder="의원명, 보좌진 이름" onkeyup="if(window.event.keyCode==13){handleFilter()}">
+            <button class="search-btn" onclick="handleFilter()">검색</button>
+        </div>
+    </div>
+
+    <div class="sort-row">
+        <select id="topSort" class="sort-select" onchange="handleSort(this.value)">
+            <option value="HG_NM">성명순</option>
+            <option value="ROOM_ASC">호실순</option>
+            <option value="UNITS_DESC">다선순</option>
+        </select>
+    </div>
+
+    <div id="loading" style="display:none; text-align:center; padding:20px; color:var(--primary);">📡 데이터 로딩 중...</div>
+    
+    <div class="table-wrapper">
+        <table>
+            <thead>
+            </thead>
+            <tbody id="memberTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="detailModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span></span>
+            <strong>의원 상세 정보</strong>
+            <span onclick="closeModal()" style="cursor:pointer; font-size:24px; padding: 0 10px;">&times;</span>
+        </div>
+        <table class="detail-table" id="detailContent"></table>
+        
+        <button id="btnSeminar" class="seminar-trigger-btn">행사일정 보기</button>
+
+        <div id="seminarSection" class="seminar-section">
+            <div id="seminarList"></div>
+        </div>
+
+        <div style="padding: 15px; text-align: center; background: #f8f9fa;">
+            <button onclick="closeModal()" style="background:#fff; color:var(--primary); border:1px solid var(--primary); width: 100px; height: 36px; font-weight: bold; border-radius: 6px; cursor: pointer;">닫기</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_KEY = '4fbc27e65852496ab48087bcb355321a';
+    const SEMINAR_KEY = '43212770665e4386873e766f4988a40d';
+    const ENDPOINT = 'https://open.assembly.go.kr/portal/openapi/nwvrqwxyaytdsfvhu';
+    const SEMINAR_ENDPOINT = 'https://open.assembly.go.kr/portal/openapi/nfcoioopazrwmjrgs';
+    
+    let allMembers = [];
+    let currentFiltered = [];
+
+    window.onload = fetchAllAssemblyData;
+
+    async function fetchAllAssemblyData() {
+        const loader = document.getElementById('loading');
+        loader.style.display = 'block';
+        try {
+            const response = await fetch(`${ENDPOINT}?KEY=${API_KEY}&Type=json&pIndex=1&pSize=500`);
+            const data = await response.json();
+            if (data.nwvrqwxyaytdsfvhu) {
+                allMembers = data.nwvrqwxyaytdsfvhu[1].row;
+                currentFiltered = [...allMembers];
+                handleSort('HG_NM');
+            }
+        } catch (error) { console.error(error); } finally { loader.style.display = 'none'; }
+    }
+
+    function handleFilter() {
+        const committee = document.getElementById('committeeSelect').value;
+        const text = document.getElementById('unifiedSearch').value.trim().toLowerCase();
+        currentFiltered = allMembers.filter(m => {
+            const mComm = !committee || (m.CMITS && m.CMITS.includes(committee));
+            const mText = !text || [m.HG_NM, m.STAFF, m.SECRETARY, m.SECRETARY2].some(v => v && v.toLowerCase().includes(text));
+            return mComm && mText;
+        });
+        handleSort(document.getElementById('topSort').value);
+    }
+
+    function handleSort(criteria) {
+        currentFiltered.sort((a, b) => {
+            if (criteria === 'HG_NM') return (a.HG_NM || '').localeCompare(b.HG_NM || '', 'ko');
+            if (criteria === 'ROOM_ASC') return (parseInt((a.ASSEM_ADDR || '0').replace(/[^0-9]/g, '')) || 0) - (parseInt((b.ASSEM_ADDR || '0').replace(/[^0-9]/g, '')) || 0);
+            if (criteria === 'UNITS_DESC') return (b.UNITS || '').split(',').length - (a.UNITS || '').split(',').length;
+            return 0;
+        });
+        renderTable(currentFiltered);
+    }
+
+    function renderTable(data) {
+        const container = document.getElementById('memberTableBody');
+        container.innerHTML = data.map(item => `
+            <tr>
+                <td data-label="성명">
+                    <div>
+                        <span class="name-link" onclick="openModal('${item.MONA_CD}')">${item.HG_NM || '-'}</span>
+                        ${item.REELE_GNB_NM ? `<span class="reele-badge">${item.REELE_GNB_NM}</span>` : ''}
+                    </div>
+                </td>
+                <td data-label="정당"><span class="badge" style="background:#eee; padding:2px 8px; border-radius:4px;">${item.POLY_NM || '-'}</span></td>
+                <td data-label="사무실 호실">${item.ASSEM_ADDR || '-'}</td>
+                <td data-label="보좌관" style="font-size:12px; color:#666;">${item.STAFF || '-'}</td>
+                <td data-label="선임비서관" style="font-size:12px; color:#666;">${item.SECRETARY || '-'}</td>
+            </tr>
+        `).join('');
+    }
+
+    function openModal(monaCd) {
+        const item = allMembers.find(m => m.MONA_CD === monaCd);
+        if(!item) return;
+
+        document.getElementById('seminarSection').style.display = 'none';
+        document.getElementById('seminarList').innerHTML = '';
+
+        const unitInfo = item.UNITS ? `${item.REELE_GNB_NM || ''} (${item.UNITS})` : (item.REELE_GNB_NM || '-');
+        const fields = [
+            ["한자성명", item.HJ_NM], ["정당", item.POLY_NM], ["선거구", item.ORIG_NM],
+            ["당선 정보", unitInfo], ["소속 위원회", item.CMITS], ["전화번호", item.TEL_NO],
+            ["사무실 호실", item.ASSEM_ADDR], ["이메일", item.E_MAIL], 
+            ["홈페이지", item.HOMEPAGE ? `<a href="${item.HOMEPAGE}" target="_blank" style="color:var(--accent)">바로가기</a>` : '-'],
+            ["보좌관", item.STAFF], ["선임비서관", item.SECRETARY], ["비서관", item.SECRETARY2]
+        ];
+        
+        document.getElementById('detailContent').innerHTML = fields.map(f => `<tr><th>${f[0]}</th><td>${f[1] || '-'}</td></tr>`).join('');
+        document.getElementById('btnSeminar').onclick = () => fetchSeminars(item.HG_NM);
+        document.getElementById('detailModal').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+
+    async function fetchSeminars(memberName) {
+        const listDiv = document.getElementById('seminarList');
+        document.getElementById('seminarSection').style.display = 'block';
+        listDiv.innerHTML = '<p style="font-size:13px; color:#666;">조회 중...</p>';
+
+        try {
+            const url = `${SEMINAR_ENDPOINT}?KEY=${SEMINAR_KEY}&Type=json&pIndex=1&pSize=50&NAME=${encodeURIComponent(memberName)}`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if(data.nfcoioopazrwmjrgs) {
+                const rows = data.nfcoioopazrwmjrgs[1].row;
+                listDiv.innerHTML = rows.map(s => `
+                    <div class="seminar-item">
+                        <div class="seminar-title" onclick="if('${s.IMGLINK}') window.open('${s.IMGLINK}')">${s.TITLE}</div>
+                        <div class="seminar-info">일시: ${s.SDATE} ${s.STIME || ''} | 장소: ${s.LOCATION || '-'}</div>
+                    </div>
+                `).join('');
+            } else {
+                listDiv.innerHTML = '<p style="font-size:13px; color:#999; padding:10px 0;">진행 예정인 행사 일정이 없습니다.</p>';
+            }
+        } catch (e) { listDiv.innerHTML = '데이터를 불러오는 중 오류가 발생했습니다.'; }
+    }
+
+    function closeModal() { document.getElementById('detailModal').style.display = 'none'; document.body.style.overflow = 'auto'; }
+    window.onclick = (e) => { if (e.target == document.getElementById('detailModal')) closeModal(); }
+</script>
+</body>
+</html>
