@@ -74,7 +74,7 @@
 <body>
 
 <div class="container">
-    <header><h1>제22대 국회 의원실 검색</h1></header>
+    <header><h1>🏛️ 제22대 국회 의원실 검색</h1></header>
 
     <div class="search-area">
         <div class="search-row">
@@ -117,13 +117,6 @@
     <div class="table-wrapper">
         <table>
             <thead>
-                <tr>
-                    <th>성명(당선)</th>
-                    <th>정당</th>
-                    <th>사무실 호실</th>
-                    <th>보좌관</th>
-                    <th>선임비서관</th>
-                </tr>
             </thead>
             <tbody id="memberTableBody"></tbody>
         </table>
@@ -201,7 +194,7 @@
         const container = document.getElementById('memberTableBody');
         container.innerHTML = data.map(item => `
             <tr>
-                <td data-label="성명(당선)">
+                <td data-label="성명">
                     <div>
                         <span class="name-link" onclick="openModal('${item.MONA_CD}')">${item.HG_NM || '-'}</span>
                         ${item.REELE_GNB_NM ? `<span class="reele-badge">${item.REELE_GNB_NM}</span>` : ''}
