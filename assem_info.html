@@ -141,7 +141,7 @@
         <table>
             <thead>
                 <tr>
-                    <th>성명(당선)</th>
+                    <th>성명</th>
                     <th>정당</th>
                     <th>사무실 호실</th>
                     <th>보좌관</th>
@@ -247,7 +247,7 @@
             const reele = item.REELE_GNB_NM || '';
             return `
                 <tr>
-                    <td data-label="성명(당선)">
+                    <td data-label="성명">
                         <div>
                             <span class="name-link" onclick="openModal('${item.MONA_CD}')">${item.HG_NM || '-'}</span>
                             ${reele ? `<span class="reele-badge">${reele}</span>` : ''}
@@ -283,3 +283,4 @@
 </script>
 </body>
 </html>
+
