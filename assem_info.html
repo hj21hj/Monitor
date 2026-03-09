@@ -7,48 +7,25 @@
     <style>
         :root { --primary: #003478; --accent: #0056b3; --bg: #f8f9fa; --border: #dee2e6; }
         body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: #333; }
-        
-        /* 모바일 패딩 조정 */
-        @media (max-width: 768px) {
-            body { padding: 10px; }
-            .container { padding: 15px !important; }
-        }
-
         .container { max-width: 100%; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         
         header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); margin-bottom: 20px; padding-bottom: 15px; }
         h1 { color: var(--primary); font-size: 22px; margin: 0; }
 
         .search-area { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 15px; background: #f1f3f5; border-radius: 8px; }
-        .search-row { display: flex; gap: 10px; flex-wrap: wrap; }
-        
+        .search-row { display: flex; gap: 10px; }
         select, input { padding: 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 15px; }
-        
-        /* 검색창 반응형 설정 */
-        #committeeSelect { width: 100%; }
-        #unifiedSearch { flex: 1; min-width: 200px; }
-        .search-btn { width: 100%; }
-
-        @media (min-width: 768px) {
-            #committeeSelect { width: 250px; }
-            .search-btn { width: auto; padding: 12px 25px; }
-        }
-
-        button { background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        select { background-color: white; width: 250px; cursor: pointer; }
+        input { flex: 1; }
+        button { padding: 12px 25px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
         button:hover { background: var(--accent); }
 
+        /* 정렬 콤보박스 영역 */
         .list-header { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 10px; gap: 8px; }
         .sort-select-small { padding: 6px 10px; font-size: 13px; width: auto; min-width: 160px; height: 35px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; }
 
-        /* 테이블 래퍼: 모바일에서 가로 스크롤 허용 */
-        .table-wrapper { 
-            overflow-x: auto; 
-            border: 1px solid var(--border); 
-            border-radius: 8px;
-            -webkit-overflow-scrolling: touch; /* iOS 부드러운 스크롤 */
-        }
-        
-        table { width: 100%; border-collapse: collapse; min-width: 1000px; font-size: 13px; }
+        .table-wrapper { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1200px; font-size: 13px; }
         th { background: #e9ecef; padding: 12px; border-bottom: 2px solid var(--border); text-align: left; position: sticky; top: 0; white-space: nowrap; }
         td { padding: 10px 12px; border-bottom: 1px solid #eee; white-space: nowrap; }
         tr:hover { background-color: #f1f8ff; }
@@ -56,20 +33,17 @@
         .name-link { color: var(--primary); font-weight: 700; cursor: pointer; text-decoration: underline; }
         .badge { background: #eee; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
 
-        /* 모달 반응형 */
+        /* 모달 스타일 */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); overflow-y: auto; }
-        .modal-content { background: white; margin: 30px auto; width: 90%; max-width: 700px; border-radius: 8px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
-        .modal-header { background: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .modal-content { background: white; margin: 50px auto; width: 700px; border-radius: 8px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+        .modal-header { background: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: center; align-items: center; position: relative; }
         .modal-header h2 { font-size: 18px; margin: 0; }
-        .close-btn { font-size: 24px; color: white; cursor: pointer; background: none; border: none; }
-        
-        .detail-table { width: 100%; border-collapse: collapse; }
-        .detail-table th { background: #f8f9fa; width: 35%; padding: 12px 15px; border-bottom: 1px solid var(--border); color: #666; font-weight: 500; text-align: left; }
-        .detail-table td { padding: 12px 15px; border-bottom: 1px solid var(--border); color: #111; font-size: 14px; white-space: normal; word-break: break-all; }
-        
-        .modal-footer { padding: 15px; text-align: center; background: #f8f9fa; }
-        .footer-close { padding: 10px 30px; border: 1px solid var(--primary); color: var(--primary); background: white; font-weight: bold; cursor: pointer; border-radius: 4px; }
-
+        .close-btn { position: absolute; right: 20px; font-size: 24px; color: white; cursor: pointer; background: none; border: none; }
+        .detail-table { width: 100%; border-collapse: collapse; border-top: 1px solid var(--border); }
+        .detail-table th { background: #f8f9fa; width: 30%; padding: 12px 20px; border-bottom: 1px solid var(--border); color: #666; font-weight: 500; text-align: left; }
+        .detail-table td { padding: 12px 20px; border-bottom: 1px solid var(--border); color: #111; font-size: 14px; white-space: normal; }
+        .modal-footer { padding: 20px; text-align: center; }
+        .footer-close { padding: 8px 30px; border: 1px solid var(--primary); color: var(--primary); background: white; font-weight: bold; cursor: pointer; }
         .loading { text-align: center; padding: 50px; display: none; font-size: 18px; color: var(--primary); }
     </style>
 </head>
@@ -103,12 +77,13 @@
                 <option value="행정안전위원회">행정안전위원회</option>
                 <option value="환경노동위원회">환경노동위원회</option>
             </select>
-            <input type="text" id="unifiedSearch" placeholder="의원명, 보좌관, 비서관 이름 입력" onkeyup="if(window.event.keyCode==13){handleFilter()}">
-            <button class="search-btn" onclick="handleFilter()">검색</button>
+            <input type="text" id="unifiedSearch" placeholder="의원명, 보좌관, 선임비서관, 비서관 이름을 입력하세요" onkeyup="if(window.event.keyCode==13){handleFilter()}">
+            <button onclick="handleFilter()">검색</button>
         </div>
     </div>
 
     <div class="list-header">
+        <span style="font-size: 13px; color: #666; font-weight: bold;">정렬:</span>
         <select id="sortSelect" class="sort-select-small" onchange="handleFilter()">
             <option value="NAME_ASC">이름 가나다순</option>
             <option value="ROOM_ASC">사무실 호실 (오름차순)</option>
@@ -130,6 +105,7 @@
                     <th>소속 위원회</th>
                     <th>전화번호</th>
                     <th>보좌관</th>
+                    <th>상세</th>
                 </tr>
             </thead>
             <tbody id="memberTableBody"></tbody>
@@ -164,10 +140,12 @@
             const data = await response.json();
             if (data.nwvrqwxyaytdsfvhu) {
                 allMembers = data.nwvrqwxyaytdsfvhu[1].row;
+                // 기본값인 '전체 위원회' 상태로 초기 렌더링
                 handleFilter(); 
             }
         } catch (error) {
             console.error('API Error:', error);
+            alert('국회 API 데이터를 불러오지 못했습니다.');
         } finally {
             document.getElementById('loading').style.display = 'none';
         }
@@ -178,6 +156,7 @@
         const textQuery = document.getElementById('unifiedSearch').value.trim().toLowerCase();
         const sortType = document.getElementById('sortSelect').value;
         
+        // 1. 필터링
         let filtered = allMembers.filter(m => {
             const matchesCommittee = !committeeQuery || (m.CMITS && m.CMITS.includes(committeeQuery));
             const matchesText = !textQuery || 
@@ -185,6 +164,7 @@
             return matchesCommittee && matchesText;
         });
 
+        // 2. 정렬
         filtered.sort((a, b) => {
             if (sortType === 'NAME_ASC') return a.HG_NM.localeCompare(b.HG_NM, 'ko');
             if (sortType === 'ROOM_ASC' || sortType === 'ROOM_DESC') {
@@ -214,6 +194,7 @@
                 <td>${(item.CMITS || '').split(',')[0]}...</td>
                 <td>${item.TEL_NO || '-'}</td>
                 <td>${item.STAFF || '-'}</td>
+                <td><button onclick="openModal('${item.MONA_CD}')" style="padding:4px 8px; font-size:11px;">보기</button></td>
             </tr>
         `).join('');
     }
@@ -246,5 +227,6 @@
 
     window.onclick = (e) => { if(e.target == document.getElementById('detailModal')) closeModal(); }
 </script>
+
 </body>
 </html>
