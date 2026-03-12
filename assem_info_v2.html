@@ -5,56 +5,87 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>제22대 국회 의원실 검색</title>
     <style>
-        :root { --primary: #003478; --accent: #0056b3; --bg: #f8f9fa; --border: #dee2e6; --input-height: 40px; }
+        :root { --primary: #003478; --accent: #0056b3; --bg: #f8f9fa; --border: #dee2e6; --input-height: 38px; }
         body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); margin: 0; padding: 10px; color: #333; -webkit-tap-highlight-color: transparent; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
         header { border-bottom: 2px solid var(--primary); margin-bottom: 15px; padding-bottom: 10px; }
         h1 { color: var(--primary); font-size: 18px; margin: 0; text-align: center; }
 
-        /* 검색 영역 */
         .search-area { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; padding: 12px; background: #f1f3f5; border-radius: 8px; }
         .search-row { display: flex; flex-direction: column; gap: 8px; }
-        select, input, .search-btn { width: 100%; height: var(--input-height); padding: 0 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-        .search-btn { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; }
-
-        /* 정렬 드롭다운 */
-        .sort-row { display: flex; justify-content: flex-end; margin-bottom: 12px; }
-        .sort-select { width: auto !important; height: 32px !important; padding: 0 8px !important; font-size: 13px !important; border-radius: 4px; background-color: #fff; border: 1px solid var(--border); }
-
-        /* 테이블 및 카드 스타일 (헤더 제거) */
-        table { width: 100%; border-collapse: collapse; }
-        thead { display: none; } /* 상단 제목 행 완전 제거 */
         
-        #memberTableBody tr { 
-            display: flex; flex-direction: column; margin-bottom: 12px; 
-            border: 1px solid var(--border); border-radius: 8px; background: #fff; padding: 12px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        select, input, .search-btn { 
+            width: 100%; 
+            height: var(--input-height); 
+            padding: 0 12px; 
+            border: 1px solid #ced4da; 
+            border-radius: 6px; 
+            font-size: 14px; 
+            box-sizing: border-box; 
+            line-height: var(--input-height);
         }
-        #memberTableBody td { border: none; padding: 5px 0; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
-        #memberTableBody td::before { content: attr(data-label); font-weight: bold; color: #666; font-size: 12px; }
+        
+        .search-btn { 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            font-weight: bold; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
+        .sort-row { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+        .sort-select { width: auto !important; height: 30px !important; padding: 0 8px !important; font-size: 12px !important; border-radius: 4px; background-color: #fff; cursor: pointer; border: 1px solid var(--border); }
+
+        .table-wrapper { overflow-x: auto; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        
         @media (min-width: 768px) {
             .search-row { flex-direction: row; }
             #committeeSelect { flex: 3; }
-            #unifiedSearch { flex: 6; }
-            .search-btn { flex: 1; }
+            #unifiedSearch { flex: 5.5; }
+            .search-btn { flex: 1.5; }
             h1 { font-size: 22px; text-align: left; }
             body { padding: 20px; }
         }
 
-        /* 텍스트 스타일 정의 */
-        .name-link { color: var(--primary); font-weight: 700; font-size: 17px; text-decoration: underline; cursor: pointer; }
+        #memberTableBody tr { 
+            display: flex; flex-direction: column; margin-bottom: 15px; 
+            border: 1px solid var(--border); border-radius: 8px; background: #fff; padding: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        #memberTableBody td { border: none; padding: 6px 0; display: flex; justify-content: space-between; align-items: center; white-space: normal; }
+        #memberTableBody td::before { content: attr(data-label); font-weight: bold; color: #666; font-size: 12px; margin-right: 10px; }
+        
+        @media (min-width: 768px) {
+            #memberTableBody tr { display: table-row; }
+            #memberTableBody td { display: table-cell; border-bottom: 1px solid #eee; padding: 10px 12px; }
+            #memberTableBody td::before { display: none; }
+            thead { display: table-header-group; }
+        }
+        @media (max-width: 767px) { thead { display: none; } }
+
+        .name-link { color: var(--primary); font-weight: 700; font-size: 16px; text-decoration: underline; cursor: pointer; }
         .badge { background: #eee; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
         .reele-badge { background: #e7f3ff; color: #0056b3; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-left: 5px; }
 
-        /* 모달 스타일 */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); }
-        .modal-content { background: white; position: absolute; bottom: 0; width: 100%; border-radius: 20px 20px 0 0; max-height: 85vh; overflow-y: auto; }
-        .modal-header { background: var(--primary); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .modal-content { 
+            background: white; position: absolute; bottom: 0; width: 100%; 
+            border-radius: 20px 20px 0 0; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @media (min-width: 768px) { .modal-content { position: relative; margin: 50px auto; width: 600px; border-radius: 8px; bottom: auto; } }
+
+        .modal-header { background: var(--primary); color: white; padding: 15px; position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; }
         .detail-table { width: 100%; border-collapse: collapse; }
-        .detail-table th { background: #f8f9fa; width: 35%; padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; text-align: left; }
-        .detail-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
-        .loading { text-align: center; padding: 30px; color: var(--primary); }
+        .detail-table th { background: #f8f9fa; width: 35%; padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; text-align: left; color: #666; }
+        .detail-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; line-height: 1.5; color: #111; }
+        .loading { text-align: center; padding: 30px; font-size: 16px; color: var(--primary); }
     </style>
 </head>
 <body>
@@ -100,22 +131,42 @@
         </select>
     </div>
 
-    <div id="loading" class="loading" style="display:none;">📡 로딩 중...</div>
+    <div id="loading" class="loading" style="display:none;">📡 데이터 로딩 중...</div>
     
-    <table id="memberTable">
-        <tbody id="memberTableBody"></tbody>
-    </table>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>성명</th>
+                    <th>정당</th>
+                    <th>사무실 호실</th>
+                    <th>보좌관</th>
+                    <th>선임비서관</th>
+                </tr>
+            </thead>
+            <tbody id="memberTableBody"></tbody>
+        </table>
+    </div>
+
+    <div class="sort-row" style="margin-top: 15px;">
+        <select id="bottomSort" class="sort-select" onchange="handleSort(this.value)">
+            <option value="ROOM_DESC" selected>호실순</option>
+            <option value="HG_NM">성명순</option>
+            <option value="UNITS_DESC">다선순</option>
+        </select>
+    </div>
 </div>
 
 <div id="detailModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
+            <span></span>
             <strong>의원 상세 정보</strong>
-            <span onclick="closeModal()" style="cursor:pointer; font-size:24px;">&times;</span>
+            <span onclick="closeModal()" style="cursor:pointer; font-size:24px; padding: 0 10px;">&times;</span>
         </div>
         <table class="detail-table" id="detailContent"></table>
-        <div style="padding: 15px; text-align: center;">
-            <button onclick="closeModal()" style="padding: 10px 30px; border-radius: 6px; border: 1px solid var(--primary); background: #fff; color: var(--primary); font-weight: bold;">닫기</button>
+        <div style="padding: 15px; text-align: center; background: #f8f9fa;">
+            <button onclick="closeModal()" style="background:#fff; color:var(--primary); border:1px solid var(--primary); width: 100px; height: 36px; font-weight: bold; border-radius: 6px; cursor: pointer;">닫기</button>
         </div>
     </div>
 </div>
@@ -137,31 +188,42 @@
             if (data.nwvrqwxyaytdsfvhu) {
                 allMembers = data.nwvrqwxyaytdsfvhu[1].row;
                 currentFiltered = [...allMembers];
-                handleSort('ROOM_DESC'); // 기본 정렬: 호실순(내림차순)
+                // 초기 정렬을 '호실순(고층)'으로 설정
+                handleSort('ROOM_DESC');
             }
-        } catch (error) { console.error(error); } finally { loader.style.display = 'none'; }
+        } catch (error) { 
+            console.error(error);
+        } finally { 
+            loader.style.display = 'none'; 
+        }
     }
 
     function handleFilter() {
         const committee = document.getElementById('committeeSelect').value;
         const text = document.getElementById('unifiedSearch').value.trim().toLowerCase();
+        
         currentFiltered = allMembers.filter(m => {
             const mComm = !committee || (m.CMITS && m.CMITS.includes(committee));
             const mText = !text || [m.HG_NM, m.STAFF, m.SECRETARY, m.SECRETARY2].some(v => v && v.toLowerCase().includes(text));
             return mComm && mText;
         });
-        handleSort(document.getElementById('topSort').value);
+        
+        const currentSort = document.getElementById('topSort').value;
+        handleSort(currentSort);
     }
 
     function handleSort(criteria) {
         document.getElementById('topSort').value = criteria;
+        document.getElementById('bottomSort').value = criteria;
+
         currentFiltered.sort((a, b) => {
+            if (criteria === 'HG_NM') return (a.HG_NM || '').localeCompare(b.HG_NM || '', 'ko');
             if (criteria === 'ROOM_DESC') {
+                // 호실 번호 숫자만 추출하여 내림차순 정렬 (고층부터)
                 const roomA = parseInt((a.ASSEM_ADDR || '0').replace(/[^0-9]/g, '')) || 0;
                 const roomB = parseInt((b.ASSEM_ADDR || '0').replace(/[^0-9]/g, '')) || 0;
                 return roomB - roomA;
             }
-            if (criteria === 'HG_NM') return (a.HG_NM || '').localeCompare(b.HG_NM || '', 'ko');
             if (criteria === 'UNITS_DESC') {
                 const unitA = (a.UNITS || '').split(',').length;
                 const unitB = (b.UNITS || '').split(',').length;
@@ -175,30 +237,38 @@
     function renderTable(data) {
         const container = document.getElementById('memberTableBody');
         if(data.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:40px;">결과가 없습니다.</div>';
+            container.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">결과가 없습니다.</td></tr>';
             return;
         }
-        // 모든 텍스트 크기를 균일하게 맞추기 위해 인라인 폰트 사이즈 조정
-        container.innerHTML = data.map(item => `
-            <tr>
-                <td data-label="성명">
-                    <span class="name-link" onclick="openModal('${item.MONA_CD}')">${item.HG_NM || '-'}</span>
-                    ${item.REELE_GNB_NM ? `<span class="reele-badge">${item.REELE_GNB_NM}</span>` : ''}
-                </td>
-                <td data-label="정당"><span class="badge">${item.POLY_NM || '-'}</span></td>
-                <td data-label="사무실 호실"><span>${item.ASSEM_ADDR || '-'}</span></td>
-                <td data-label="보좌관" style="color:#666;">${item.STAFF || '-'}</td>
-                <td data-label="선임비서관" style="color:#666;">${item.SECRETARY || '-'}</td>
-            </tr>
-        `).join('');
+
+        container.innerHTML = data.map(item => {
+            const reele = item.REELE_GNB_NM || '';
+            return `
+                <tr>
+                    <td data-label="성명">
+                        <div>
+                            <span class="name-link" onclick="openModal('${item.MONA_CD}')">${item.HG_NM || '-'}</span>
+                            ${reele ? `<span class="reele-badge">${reele}</span>` : ''}
+                        </div>
+                    </td>
+                    <td data-label="정당"><span class="badge">${item.POLY_NM || '-'}</span></td>
+                    <td data-label="사무실 호실">${item.ASSEM_ADDR || '-'}</td>
+                    <td data-label="보좌관" style="font-size:12px; color:#666;">${item.STAFF || '-'}</td>
+                    <td data-label="선임비서관" style="font-size:12px; color:#666;">${item.SECRETARY || '-'}</td>
+                </tr>
+            `;
+        }).join('');
     }
 
     function openModal(monaCd) {
         const item = allMembers.find(m => m.MONA_CD === monaCd);
         if(!item) return;
+        const unitInfo = item.UNITS ? `${item.REELE_GNB_NM || ''} (${item.UNITS})` : (item.REELE_GNB_NM || '-');
         const fields = [
             ["한자성명", item.HJ_NM], ["정당", item.POLY_NM], ["선거구", item.ORIG_NM],
-            ["소속 위원회", item.CMITS], ["전화번호", item.TEL_NO], ["호실", item.ASSEM_ADDR],
+            ["당선 정보", unitInfo], ["소속 위원회", item.CMITS], ["전화번호", item.TEL_NO],
+            ["사무실 호실", item.ASSEM_ADDR], ["이메일", item.E_MAIL], 
+            ["홈페이지", item.HOMEPAGE ? `<a href="${item.HOMEPAGE}" target="_blank" style="color:var(--accent)">바로가기</a>` : '-'],
             ["보좌관", item.STAFF], ["선임비서관", item.SECRETARY], ["비서관", item.SECRETARY2]
         ];
         document.getElementById('detailContent').innerHTML = fields.map(f => `<tr><th>${f[0]}</th><td>${f[1] || '-'}</td></tr>`).join('');
@@ -207,6 +277,7 @@
     }
 
     function closeModal() { document.getElementById('detailModal').style.display = 'none'; document.body.style.overflow = 'auto'; }
+    window.onclick = (e) => { if (e.target == document.getElementById('detailModal')) closeModal(); }
 </script>
 </body>
 </html>
