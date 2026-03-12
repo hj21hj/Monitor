@@ -87,13 +87,12 @@
         .detail-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; line-height: 1.5; color: #111; }
         .loading { text-align: center; padding: 30px; font-size: 16px; color: var(--primary); }
 
-        /* 행사 및 뉴스 정보 공통 스타일 */
+        /* 모니터링 및 행사 섹션 스타일 */
         .seminar-trigger-btn, .monitor-btn { 
             background: #2c3e50; color: white; border: none; border-radius: 6px; 
             font-weight: bold; cursor: pointer; font-size: 14px; height: 40px;
         }
         .seminar-trigger-btn { width: calc(100% - 30px); margin: 5px 15px 15px 15px; }
-        
         .monitor-btn-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 15px 15px 5px 15px; }
         
         .info-section { display: none; padding: 0 15px 15px 15px; border-top: 1px solid #eee; background: #fff; }
@@ -101,6 +100,7 @@
         .info-title { color: var(--accent); font-weight: bold; cursor: pointer; text-decoration: underline; margin-bottom: 5px; font-size: 14px; }
         .info-sub { font-size: 12px; color: #777; line-height: 1.4; }
         .yt-thumb { width: 100%; aspect-ratio: 16/9; background-size: cover; background-position: center; border-radius: 8px; margin-bottom: 8px; background-color: #000; }
+        .highlight-today { color: #ff0000 !important; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -357,6 +357,16 @@
         }
     }
 
+    // 오늘 날짜인지 판별하는 유틸리티
+    function isDateToday(dateStr) {
+        if (!dateStr) return false;
+        const today = new Date();
+        const target = new Date(dateStr);
+        return today.getFullYear() === target.getFullYear() &&
+               today.getMonth() === target.getMonth() &&
+               today.getDate() === target.getDate();
+    }
+
     async function fetchMonitorData(type, q) {
         const listDiv = document.getElementById(`${type}List`);
         listDiv.innerHTML = '<p style="font-size:13px; color:#666; padding:10px;">데이터 로딩 중...</p>';
@@ -366,12 +376,15 @@
                 const api = `https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(q)}&display=10&sort=date`;
                 const res = await fetch(`${PROXY_URL}?url=${encodeURIComponent(api)}`);
                 const data = await res.json();
-                listDiv.innerHTML = (data.items || []).map(i => `
-                    <a href="${i.link}" target="_blank" class="info-item">
-                        <div class="info-title">${i.title.replace(/<[^>]*>?/gm, '')}</div>
-                        <div class="info-sub">${new Date(i.pubDate).toLocaleDateString()}</div>
-                    </a>
-                `).join('') || '결과 없음';
+                listDiv.innerHTML = (data.items || []).map(i => {
+                    const highlight = isDateToday(i.pubDate) ? 'highlight-today' : '';
+                    return `
+                        <a href="${i.link}" target="_blank" class="info-item">
+                            <div class="info-title">${i.title.replace(/<[^>]*>?/gm, '')}</div>
+                            <div class="info-sub ${highlight}">${new Date(i.pubDate).toLocaleDateString()}</div>
+                        </a>
+                    `;
+                }).join('') || '결과 없음';
             } 
             else if (type === 'google') {
                 const url = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=ko&gl=KR&ceid=KR:ko`;
@@ -379,23 +392,31 @@
                 const text = await res.text();
                 const xml = new DOMParser().parseFromString(text, "text/xml");
                 const items = Array.from(xml.querySelectorAll("item")).slice(0, 10);
-                listDiv.innerHTML = items.map(i => `
-                    <a href="${i.querySelector("link").textContent}" target="_blank" class="info-item">
-                        <div class="info-title">${i.querySelector("title").textContent}</div>
-                        <div class="info-sub">${i.querySelector("source")?.textContent || ''}</div>
-                    </a>
-                `).join('') || '결과 없음';
+                listDiv.innerHTML = items.map(i => {
+                    const pubDate = i.querySelector("pubDate")?.textContent;
+                    const highlight = isDateToday(pubDate) ? 'highlight-today' : '';
+                    return `
+                        <a href="${i.querySelector("link").textContent}" target="_blank" class="info-item">
+                            <div class="info-title">${i.querySelector("title").textContent}</div>
+                            <div class="info-sub ${highlight}">${i.querySelector("source")?.textContent || ''}</div>
+                        </a>
+                    `;
+                }).join('') || '결과 없음';
             }
             else if (type === 'yt') {
                 const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&maxResults=5&order=date&type=video&key=${YT_KEY}`;
                 const res = await fetch(url);
                 const data = await res.json();
-                listDiv.innerHTML = (data.items || []).map(v => `
-                    <a href="https://www.youtube.com/watch?v=${v.id.videoId}" target="_blank" class="info-item">
-                        <div class="yt-thumb" style="background-image:url('${v.snippet.thumbnails.medium.url}')"></div>
-                        <div class="info-title" style="font-size:13px;">${v.snippet.title}</div>
-                    </a>
-                `).join('') || '결과 없음';
+                listDiv.innerHTML = (data.items || []).map(v => {
+                    const pubAt = v.snippet.publishedAt;
+                    const highlight = isDateToday(pubAt) ? 'highlight-today' : '';
+                    return `
+                        <a href="https://www.youtube.com/watch?v=${v.id.videoId}" target="_blank" class="info-item">
+                            <div class="yt-thumb" style="background-image:url('${v.snippet.thumbnails.medium.url}')"></div>
+                            <div class="info-title ${highlight}" style="font-size:13px;">${v.snippet.title}</div>
+                        </a>
+                    `;
+                }).join('') || '결과 없음';
             }
         } catch (e) { listDiv.innerHTML = '데이터 로드 실패'; }
     }
@@ -412,10 +433,12 @@
                 const today = new Date(); today.setHours(0,0,0,0);
                 listDiv.innerHTML = rows.map(s => {
                     const sDate = new Date(s.SDATE); sDate.setHours(0,0,0,0);
-                    const isUp = sDate >= today;
+                    // 오늘이거나 미래인 경우 빨간색
+                    const isUpcoming = sDate >= today;
+                    const highlight = isUpcoming ? 'highlight-today' : '';
                     return `<div class="info-item">
                         <div class="info-title" onclick="if('${s.IMGLINK}') window.open('${s.IMGLINK}')">${s.TITLE}</div>
-                        <div class="info-sub" style="${isUp ? 'color:#ff0000; font-weight:bold;' : ''}">일시: ${s.SDATE} | 장소: ${s.LOCATION || '-'}</div>
+                        <div class="info-sub ${highlight}">일시: ${s.SDATE} | 장소: ${s.LOCATION || '-'}</div>
                     </div>`;
                 }).join('');
             } else { listDiv.innerHTML = '<p style="font-size:13px; color:#999; padding:10px 0;">행사 일정이 없습니다.</p>'; }
