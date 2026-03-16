@@ -112,8 +112,8 @@
     <div class="search-area">
         <div class="search-row">
             <select id="committeeSelect" onchange="handleFilter()">
-                <option value="" selected>전체 위원회</option>
-                <option value="문화체육관광위원회">문화체육관광위원회</option>
+                <option value="문화체육관광위원회" selected>문화체육관광위원회</option>
+                <option value="">전체 위원회</option>
                 <option value="과학기술정보방송통신위원회">과학기술정보방송통신위원회</option>
                 <option value="교육위원회">교육위원회</option>
                 <option value="국방위원회">국방위원회</option>
@@ -225,8 +225,8 @@
             const data = await response.json();
             if (data.nwvrqwxyaytdsfvhu) {
                 allMembers = data.nwvrqwxyaytdsfvhu[1].row;
-                currentFiltered = [...allMembers];
-                handleSort('ROOM_DESC'); 
+                // 디폴트인 '문화체육관광위원회' 필터를 위해 handleFilter 호출
+                handleFilter(); 
             }
         } catch (error) { 
             console.error(error);
@@ -292,7 +292,6 @@
                     
                     if (data.nfcoioopazrwmjrgs) {
                         const rows = data.nfcoioopazrwmjrgs[1].row;
-                        // 오늘을 포함하여 미래의 가장 가까운 행사 날짜 찾기
                         const validSeminars = rows
                             .map(r => new Date(r.SDATE))
                             .filter(d => {
@@ -312,13 +311,9 @@
             const enrichedMembers = await Promise.all(seminarPromises);
 
             enrichedMembers.sort((a, b) => {
-                // 둘 다 일정이 없으면 순서 유지
                 if (!a.nextSeminar && !b.nextSeminar) return 0;
-                // a만 없으면 뒤로
                 if (!a.nextSeminar) return 1;
-                // b만 없으면 앞으로
                 if (!b.nextSeminar) return -1;
-                // 둘 다 있으면 오늘에 더 가까운(날짜가 빠른) 순서대로
                 return a.nextSeminar - b.nextSeminar;
             });
 
@@ -466,12 +461,21 @@
             if(data.nfcoioopazrwmjrgs) {
                 const rows = data.nfcoioopazrwmjrgs[1].row;
                 const today = new Date(); today.setHours(0,0,0,0);
+                
+                // 요일 데이터 정의
+                const week = ['일', '월', '화', '수', '목', '금', '토'];
+
                 listDiv.innerHTML = rows.map(s => {
-                    const sDate = new Date(s.SDATE); sDate.setHours(0,0,0,0);
+                    const sDate = new Date(s.SDATE); 
+                    const dayName = week[sDate.getDay()]; // 요일 추출
+                    const timeStr = s.STIME || ""; // 시간 추출
+                    
+                    sDate.setHours(0,0,0,0);
                     const isUp = sDate >= today;
+                    
                     return `<div class="info-item">
                         <div class="info-title" onclick="if('${s.IMGLINK}') window.open('${s.IMGLINK}')">${s.TITLE}</div>
-                        <div class="info-sub" style="${isUp ? 'color:#ff0000; font-weight:bold;' : ''}">일시: ${s.SDATE} | 장소: ${s.LOCATION || '-'}</div>
+                        <div class="info-sub" style="${isUp ? 'color:#ff0000; font-weight:bold;' : ''}">일시: ${s.SDATE} (${dayName}) ${timeStr} | 장소: ${s.LOCATION || '-'}</div>
                     </div>`;
                 }).join('');
             } else { listDiv.innerHTML = '<p style="font-size:13px; color:#999; padding:10px 0;">행사 일정이 없습니다.</p>'; }
@@ -483,4 +487,3 @@
 </script>
 </body>
 </html>
-
