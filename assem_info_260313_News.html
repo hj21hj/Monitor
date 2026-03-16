@@ -225,7 +225,6 @@
             const data = await response.json();
             if (data.nwvrqwxyaytdsfvhu) {
                 allMembers = data.nwvrqwxyaytdsfvhu[1].row;
-                // 디폴트인 '문화체육관광위원회' 필터를 위해 handleFilter 호출
                 handleFilter(); 
             }
         } catch (error) { 
@@ -417,12 +416,40 @@
                 const api = `https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(q)}&display=10&sort=date`;
                 const res = await fetch(`${PROXY_URL}?url=${encodeURIComponent(api)}`);
                 const data = await res.json();
-                listDiv.innerHTML = (data.items || []).map(i => `
+                
+                listDiv.innerHTML = (data.items || []).map(i => {
+                    const pubDate = new Date(i.pubDate).toLocaleDateString();
+                    
+                    let pressName = '뉴스';
+                    const link = i.originallink || i.link;
+                    if (link.includes('naver.com')) pressName = '네이버뉴스';
+                    else if (link.includes('chosun.com')) pressName = '조선일보';
+                    else if (link.includes('joins.com') || link.includes('joongang.co.kr')) pressName = '중앙일보';
+                    else if (link.includes('donga.com')) pressName = '동아일보';
+                    else if (link.includes('hani.co.kr')) pressName = '한겨레';
+                    else if (link.includes('khan.co.kr')) pressName = '경향신문';
+                    else if (link.includes('mk.co.kr')) pressName = '매일경제';
+                    else if (link.includes('hankyung.com')) pressName = '한국경제';
+                    else if (link.includes('yna.co.kr')) pressName = '연합뉴스';
+                    else if (link.includes('sbs.co.kr')) pressName = 'SBS';
+                    else if (link.includes('imbc.com')) pressName = 'MBC';
+                    else if (link.includes('kbs.co.kr')) pressName = 'KBS';
+                    else if (link.includes('ytn.co.kr')) pressName = 'YTN';
+                    else if (link.includes('newsis.com')) pressName = '뉴시스';
+                    else if (link.includes('news1.kr')) pressName = '뉴스1';
+                    else {
+                        try {
+                            const domain = new URL(link).hostname.replace('www.', '');
+                            pressName = domain;
+                        } catch(e) { pressName = '일반뉴스'; }
+                    }
+
+                    return `
                     <a href="${i.link}" target="_blank" class="info-item">
                         <div class="info-title">${i.title.replace(/<[^>]*>?/gm, '')}</div>
-                        <div class="info-sub">${new Date(i.pubDate).toLocaleDateString()}</div>
+                        <div class="info-sub">${pressName} | ${pubDate}</div>
                     </a>
-                `).join('') || '결과 없음';
+                `}).join('') || '결과 없음';
             } 
             else if (type === 'google') {
                 const url = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=ko&gl=KR&ceid=KR:ko`;
@@ -430,23 +457,30 @@
                 const text = await res.text();
                 const xml = new DOMParser().parseFromString(text, "text/xml");
                 const items = Array.from(xml.querySelectorAll("item")).slice(0, 10);
-                listDiv.innerHTML = items.map(i => `
+                listDiv.innerHTML = items.map(i => {
+                    const rawDate = i.querySelector("pubDate")?.textContent || "";
+                    const formattedDate = rawDate ? new Date(rawDate).toLocaleDateString() : "";
+                    const source = i.querySelector("source")?.textContent || "구글 뉴스";
+                    return `
                     <a href="${i.querySelector("link").textContent}" target="_blank" class="info-item">
                         <div class="info-title">${i.querySelector("title").textContent}</div>
-                        <div class="info-sub">${i.querySelector("source")?.textContent || ''}</div>
+                        <div class="info-sub">${source} | ${formattedDate}</div>
                     </a>
-                `).join('') || '결과 없음';
+                `}).join('') || '결과 없음';
             }
             else if (type === 'yt') {
                 const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&maxResults=5&order=date&type=video&key=${YT_KEY}`;
                 const res = await fetch(url);
                 const data = await res.json();
-                listDiv.innerHTML = (data.items || []).map(v => `
+                listDiv.innerHTML = (data.items || []).map(v => {
+                    const publishedAt = new Date(v.snippet.publishedAt).toLocaleDateString();
+                    return `
                     <a href="https://www.youtube.com/watch?v=${v.id.videoId}" target="_blank" class="info-item">
                         <div class="yt-thumb" style="background-image:url('${v.snippet.thumbnails.medium.url}')"></div>
                         <div class="info-title" style="font-size:13px;">${v.snippet.title}</div>
+                        <div class="info-sub" style="margin-top:4px;">${v.snippet.channelTitle} | ${publishedAt}</div>
                     </a>
-                `).join('') || '결과 없음';
+                `}).join('') || '결과 없음';
             }
         } catch (e) { listDiv.innerHTML = '데이터 로드 실패'; }
     }
@@ -461,18 +495,14 @@
             if(data.nfcoioopazrwmjrgs) {
                 const rows = data.nfcoioopazrwmjrgs[1].row;
                 const today = new Date(); today.setHours(0,0,0,0);
-                
-                // 요일 데이터 정의
                 const week = ['일', '월', '화', '수', '목', '금', '토'];
 
                 listDiv.innerHTML = rows.map(s => {
                     const sDate = new Date(s.SDATE); 
-                    const dayName = week[sDate.getDay()]; // 요일 추출
-                    const timeStr = s.STIME || ""; // 시간 추출
-                    
+                    const dayName = week[sDate.getDay()];
+                    const timeStr = s.STIME || ""; 
                     sDate.setHours(0,0,0,0);
                     const isUp = sDate >= today;
-                    
                     return `<div class="info-item">
                         <div class="info-title" onclick="if('${s.IMGLINK}') window.open('${s.IMGLINK}')">${s.TITLE}</div>
                         <div class="info-sub" style="${isUp ? 'color:#ff0000; font-weight:bold;' : ''}">일시: ${s.SDATE} (${dayName}) ${timeStr} | 장소: ${s.LOCATION || '-'}</div>
