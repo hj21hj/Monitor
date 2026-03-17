@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>국회의원 영상회의록(발언영상)</title>
+    <style>
+        :root { --main: #0b355e; --bg: #f2f4f7; --border: #e0e4e8; }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Pretendard', sans-serif; margin: 0; background: var(--bg); color: #333; }
+
+        /* 상단 고정 영역 */
+        .header-container { position: sticky; top: 0; z-index: 100; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .header-title { background: var(--main); color: white; padding: 12px; text-align: center; font-size: 16px; font-weight: bold; }
+        
+        .search-form { padding: 12px; display: flex; flex-direction: column; gap: 8px; max-width: 800px; margin: 0 auto; }
+        .row-group { display: flex; gap: 5px; }
+        select, input { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 14px; outline: none; }
+        input { flex: 2; border: 1px solid #ced4da; }
+        
+        .btn-search { width: 100%; padding: 12px; background: var(--main); color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 15px; cursor: pointer; }
+
+        /* 리스트 디자인: 발언자 강조 */
+        #results { max-width: 800px; margin: 0 auto; padding: 10px; }
+        .speech-item { 
+            background: white; border-bottom: 1px solid #eee; padding: 15px 12px; 
+            display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+        }
+        .speech-item:active { background: #f9f9f9; }
+        .info-wrap { display: flex; flex-direction: column; overflow: hidden; flex: 1; margin-right: 10px; }
+        
+        /* 의원 성함 강조 */
+        .speaker-name { font-size: 18px; font-weight: 800; color: #111; margin-bottom: 4px; }
+        /* 날짜 및 회의 제목 축소 */
+        .meeting-info { font-size: 13px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .date-text { color: #888; margin-right: 8px; font-weight: normal; }
+
+        .play-icon { color: var(--main); font-size: 20px; flex-shrink: 0; font-weight: bold; }
+
+        /* 영상 팝업(모달) */
+        #videoModal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; 
+        }
+        .modal-header { display: flex; justify-content: flex-end; padding: 10px; background: #000; }
+        .btn-close { background: none; border: none; color: white; font-size: 30px; cursor: pointer; padding: 10px; line-height: 1; }
+        #videoFrame { flex: 1; width: 100%; border: none; }
+
+        .empty-state { text-align: center; padding: 50px 20px; color: #999; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="header-container">
+    <div class="header-title">국회 발언영상 검색</div>
+    <div class="search-form">
+        <div class="row-group">
+            <select id="sel_ct1"></select>
+            <select id="sel_year"></select>
+        </div>
+        <input type="text" id="ipt_speaker" placeholder="성함 입력" onkeypress="if(event.keyCode==13) doSearch();">
+        <button class="btn-search" onclick="doSearch()">검색하기</button>
+    </div>
+</div>
+
+<div id="results">
+    <div class="empty-state">발언자 성함을 입력해 주세요.</div>
+</div>
+
+<div id="videoModal">
+    <div class="modal-header">
+        <button class="btn-close" onclick="closeModal()">✕</button>
+    </div>
+    <iframe id="videoFrame" src="" allowfullscreen></iframe>
+</div>
+
+<script>
+    const ct1Arr = document.getElementById('sel_ct1');
+    const yearArr = document.getElementById('sel_year');
+
+    for(let i=22; i>=20; i--) ct1Arr.add(new Option(`${i}대`, i));
+    for(let y=2026; y>=2020; y--) {
+        let opt = new Option(`${y}년`, y);
+        if(y===2025) opt.selected = true;
+        yearArr.add(opt);
+    }
+
+    async function doSearch() {
+        const key = 'b44305f390624eabbd46f3bba38eede8';
+        const ct1 = ct1Arr.value;
+        const year = yearArr.value;
+        const name = document.getElementById('ipt_speaker').value.trim();
+        const resDiv = document.getElementById('results');
+
+        if(!name) { alert("성함을 입력해 주세요."); return; }
+        resDiv.innerHTML = "<div class='empty-state'>데이터를 검색 중입니다...</div>";
+
+        const url = `https://open.assembly.go.kr/portal/openapi/npeslxqbanwkimebr?KEY=${key}&Type=json&pIndex=1&pSize=100&CT1=${ct1}&TAKING_DATE=${year}&ESSENTIAL_PERSON=${encodeURIComponent(name)}`;
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (!data.npeslxqbanwkimebr) {
+                resDiv.innerHTML = "<div class='empty-state'>검색 결과가 없습니다.</div>";
+                return;
+            }
+
+            const rows = data.npeslxqbanwkimebr[1].row;
+            resDiv.innerHTML = "";
+
+            rows.forEach(row => {
+                const item = document.createElement('div');
+                item.className = 'speech-item';
+                item.onclick = () => openModal(row.LINK_URL);
+                
+                const speaker = row.ESSENTIAL_PERSON.split('/')[0].trim();
+                item.innerHTML = `
+                    <div class="info-wrap">
+                        <div class="speaker-name">${speaker} 의원</div>
+                        <div class="meeting-info">
+                            <span class="date-text">${row.TAKING_DATE}</span>
+                            <span>${row.TITLE}</span>
+                        </div>
+                    </div>
+                    <div class="play-icon">▶</div>
+                `;
+                resDiv.appendChild(item);
+            });
+        } catch (e) {
+            resDiv.innerHTML = "<div class='empty-state'>오류가 발생했습니다.</div>";
+        }
+    }
+
+    function openModal(url) {
+        document.getElementById('videoFrame').src = url;
+        document.getElementById('videoModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        document.getElementById('videoFrame').src = "";
+        document.getElementById('videoModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+</script>
+</body>
+</html>
