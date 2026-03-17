@@ -6,34 +6,27 @@
     <title>국회 발언영상 검색</title>
     <style>
         :root { --main: #0b355e; --bg: #f2f4f7; --border: #e0e4e8; }
-        
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Pretendard', sans-serif; margin: 0; background: var(--bg); color: #333; }
-
-        /* 상단 고정 영역 */
-        .header-container { position: sticky; top: 0; z-index: 100; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .header-container { position: sticky; top: 0; z-index: 100; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .header-title { background: var(--main); color: white; padding: 12px; text-align: center; font-size: 16px; font-weight: bold; }
-        
         .search-form { padding: 12px; display: flex; flex-direction: column; gap: 8px; max-width: 800px; margin: 0 auto; }
         .row-group { display: flex; gap: 5px; }
-        select, input { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 14px; outline: none; }
-        input { flex: 2; }
-        
-        .btn-search { width: 100%; padding: 12px; background: var(--main); color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 15px; cursor: pointer; }
-
-        /* 간결한 리스트 디자인 */
+        select, input { flex: 1; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; -webkit-appearance: none; }
+        input { flex: 2; border: 2px solid var(--main); }
+        .btn-search { width: 100%; padding: 14px; background: var(--main); color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; }
         #results { max-width: 800px; margin: 0 auto; padding: 10px; }
         .speech-item { 
-            background: white; border-bottom: 1px solid #eee; padding: 15px 10px; 
-            display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+            background: white; border-radius: 8px; margin-bottom: 8px; padding: 15px; 
+            display: flex; align-items: center; justify-content: space-between; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); cursor: pointer;
         }
-        .speech-item:active { background: #f0f4f8; }
+        .speech-item:active { background: #ebf0f5; }
         .info-wrap { display: flex; flex-direction: column; overflow: hidden; flex: 1; margin-right: 10px; }
-        .info-top { font-size: 11px; color: #888; margin-bottom: 4px; }
+        .info-top { font-size: 11px; color: #666; margin-bottom: 4px; font-weight: 600; }
         .info-title { font-size: 14px; font-weight: 500; color: #222; line-height: 1.4; word-break: keep-all; }
-        .play-icon { color: var(--main); font-size: 18px; flex-shrink: 0; opacity: 0.7; }
-
-        .empty-state { text-align: center; padding: 80px 20px; color: #999; font-size: 14px; }
+        .play-icon { width: 32px; height: 32px; background: #f0f3f7; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--main); font-size: 14px; flex-shrink: 0; }
+        .empty-state { text-align: center; padding: 80px 20px; color: #999; font-size: 14px; line-height: 1.6; }
     </style>
 </head>
 <body>
@@ -42,57 +35,69 @@
     <div class="header-title">국회 발언영상 검색</div>
     <div class="search-form">
         <div class="row-group">
-            <select id="sel_ct1"></select>
+            <select id="sel_ct1" onchange="updateYearOptions()"></select>
             <select id="sel_year"></select>
         </div>
-        <input type="text" id="ipt_speaker" placeholder="성함 입력 (예: 홍길동)" onkeypress="if(event.keyCode==13) doSearch();">
+        <input type="text" id="ipt_speaker" placeholder="의원 성함 입력" onkeypress="if(event.keyCode==13) doSearch();">
         <button class="btn-search" onclick="doSearch()">검색하기</button>
     </div>
 </div>
 
 <div id="results">
-    <div class="empty-state">국회의원 성함을 입력하여 영상을 검색하세요.</div>
+    <div class="empty-state">검색 결과가 여기에 표시됩니다.</div>
 </div>
 
 <script>
-    // 초기 설정 (대수 및 연도 초기화)
-    const ct1Arr = document.getElementById('sel_ct1');
-    const yearArr = document.getElementById('sel_year');
+    // 국회 대수별 연도 데이터 (실제 임기 기준)
+    const assemblyPeriods = {
+        '22': { start: 2024, end: 2026 }, // 현재 진행중 (2026년 가정)
+        '21': { start: 2020, end: 2024 },
+        '20': { start: 2016, end: 2020 },
+        '19': { start: 2012, end: 2016 },
+        '18': { start: 2008, end: 2012 }
+    };
 
-    // 22대~18대 설정
-    for(let i=22; i>=18; i--) ct1Arr.add(new Option(`${i}대`, i));
-    
-    // 현재 연도 기준으로 연도 리스트 생성
-    const currentYear = new Date().getFullYear();
-    for(let y=currentYear; y>=2000; y--) {
-        let opt = new Option(`${y}년`, y);
-        if(y === currentYear) opt.selected = true;
-        yearArr.add(opt);
+    const selCt1 = document.getElementById('sel_ct1');
+    const selYear = document.getElementById('sel_year');
+
+    // 대수 콤보박스 초기화
+    for (let i = 22; i >= 18; i--) {
+        selCt1.add(new Option(`${i}대 국회`, i));
     }
+
+    // 대수 선택 시 연도를 업데이트하는 함수
+    function updateYearOptions() {
+        const selectedCt1 = selCt1.value;
+        const period = assemblyPeriods[selectedCt1];
+        
+        // 기존 연도 옵션 제거
+        selYear.innerHTML = "";
+
+        // 해당 대수의 시작~종료 연도 채우기 (최신순)
+        for (let y = period.end; y >= period.start; y--) {
+            selYear.add(new Option(`${y}년`, y));
+        }
+    }
+
+    // 초기 실행 시 22대 기준으로 연도 세팅
+    updateYearOptions();
 
     async function doSearch() {
         const key = 'b44305f390624eabbd46f3bba38eede8';
-        const ct1 = ct1Arr.value;
-        const year = yearArr.value;
         const name = document.getElementById('ipt_speaker').value.trim();
         const resDiv = document.getElementById('results');
 
-        if(!name) { 
-            alert("성함을 입력해 주세요."); 
-            return; 
-        }
+        if(!name) { alert("성함을 입력해 주세요."); return; }
+        resDiv.innerHTML = "<div class='empty-state'>데이터를 검색 중입니다...</div>";
 
-        resDiv.innerHTML = "<div class='empty-state'>데이터를 불러오는 중입니다...</div>";
-
-        // 국회 OpenAPI 호출 URL
-        const url = `https://open.assembly.go.kr/portal/openapi/npeslxqbanwkimebr?KEY=${key}&Type=json&pIndex=1&pSize=100&CT1=${ct1}&TAKING_DATE=${year}&ESSENTIAL_PERSON=${encodeURIComponent(name)}`;
+        const url = `https://open.assembly.go.kr/portal/openapi/npeslxqbanwkimebr?KEY=${key}&Type=json&pIndex=1&pSize=100&CT1=${selCt1.value}&TAKING_DATE=${selYear.value}&ESSENTIAL_PERSON=${encodeURIComponent(name)}`;
 
         try {
             const response = await fetch(url);
             const data = await response.json();
             
             if (!data.npeslxqbanwkimebr) {
-                resDiv.innerHTML = "<div class='empty-state'>검색 결과가 없습니다.<br>연도나 대수를 확인해 보세요.</div>";
+                resDiv.innerHTML = "<div class='empty-state'>검색 결과가 없습니다.<br>대수나 연도를 변경해 보세요.</div>";
                 return;
             }
 
@@ -100,20 +105,19 @@
             resDiv.innerHTML = "";
 
             rows.forEach(row => {
+                const videoLink = row.LINK_URL || row.VIDEO_URL || "";
+                const speaker = row.ESSENTIAL_PERSON ? row.ESSENTIAL_PERSON.split('/')[0] : "알 수 없음";
+
                 const item = document.createElement('div');
                 item.className = 'speech-item';
-                
-                // 모바일 최적화: 클릭 시 새 창으로 영상 페이지 열기
                 item.onclick = () => {
-                    if(row.LINK_URL) {
-                        window.open(row.LINK_URL, '_blank');
+                    if(videoLink && videoLink !== "about:blank") {
+                        const finalUrl = videoLink.replace("http://", "https://");
+                        window.open(finalUrl, '_blank');
                     } else {
-                        alert("영상 링크가 제공되지 않는 항목입니다.");
+                        alert("이 영상은 현재 링크 정보를 불러올 수 없습니다.");
                     }
                 };
-                
-                // 발언자 이름 깔끔하게 정리 (슬래시 이후 제거)
-                const speaker = row.ESSENTIAL_PERSON.split('/')[0].trim();
                 
                 item.innerHTML = `
                     <div class="info-wrap">
@@ -125,8 +129,7 @@
                 resDiv.appendChild(item);
             });
         } catch (e) {
-            console.error(e);
-            resDiv.innerHTML = "<div class='empty-state'>데이터 통신 중 오류가 발생했습니다.</div>";
+            resDiv.innerHTML = "<div class='empty-state'>통신 오류가 발생했습니다.</div>";
         }
     }
 </script>
