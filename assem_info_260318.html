@@ -409,7 +409,7 @@
         const div = document.getElementById('billList');
         div.innerHTML = '조회 중...';
         try {
-            const res = await fetch(`${BILL_ENDPOINT}?KEY=${BILL_KEY}&Type=json&pIndex=1&pSize=30&AGE=22&PROPOSER=${encodeURIComponent(name)}`);
+            const res = await fetch(`${BILL_ENDPOINT}?KEY=${BILL_KEY}&Type=json&pIndex=1&pSize=50&AGE=22&PROPOSER=${encodeURIComponent(name)}`);
             const data = await res.json();
             div.innerHTML = data.TVBPMBILL11 ? data.TVBPMBILL11[1].row.map(b => `
                 <div class="info-item bill-item">
@@ -427,7 +427,7 @@
         try {
             let items = [];
             if (type === 'naver') {
-                const res = await fetch(`${PROXY_URL}?url=${encodeURIComponent(`https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(q)}&display=10&sort=date`)}`);
+                const res = await fetch(`${PROXY_URL}?url=${encodeURIComponent(`https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(q)}&display=50&sort=date`)}`);
                 const data = await res.json();
                 items = (data.items || []).map(i => ({ 
                     title: i.title.replace(/<[^>]*>?/gm, ''), 
@@ -438,14 +438,14 @@
             } else if (type === 'google') {
                 const res = await fetch(`${PROXY_URL}?url=${encodeURIComponent(`https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=ko&gl=KR&ceid=KR:ko`)}`);
                 const xml = new DOMParser().parseFromString(await res.text(), "text/xml");
-                items = Array.from(xml.querySelectorAll("item")).slice(0, 10).map(i => ({ 
+                items = Array.from(xml.querySelectorAll("item")).slice(0, 50).map(i => ({ 
                     title: i.querySelector("title").textContent, 
                     link: i.querySelector("link").textContent, 
                     sub: `${i.querySelector("source") ? i.querySelector("source").textContent : '구글뉴스'} | ${new Date(i.querySelector("pubDate").textContent).toLocaleDateString()}`, 
                     today: isToday(i.querySelector("pubDate").textContent) 
                 }));
             } else if (type === 'yt') {
-                const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&maxResults=5&order=date&type=video&key=${YT_KEY}`);
+                const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&maxResults=50&order=date&type=video&key=${YT_KEY}`);
                 const data = await res.json();
                 items = (data.items || []).map(v => ({ 
                     title: v.snippet.title, 
