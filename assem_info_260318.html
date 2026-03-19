@@ -27,6 +27,12 @@
         .name-link { color: var(--primary); font-weight: 700; font-size: 16px; text-decoration: underline; cursor: pointer; }
         .badge { background: #eee; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
         .reele-badge { background: #e7f3ff; color: #0056b3; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-left: 5px; }
+        /* 매칭 사유 배지 스타일 */
+        .match-reason { font-size: 11px; color: #fff; padding: 2px 6px; border-radius: 12px; margin-top: 4px; display: inline-block; }
+        .reason-basic { background-color: #6c757d; }
+        .reason-bill { background-color: #28a745; }
+        .reason-news { background-color: #fd7e14; }
+
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); }
         .modal-content { background: white; position: absolute; bottom: 0; width: 100%; border-radius: 20px 20px 0 0; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -80,7 +86,7 @@
                 <option value="행정안전위원회">행정안전위원회</option>
                 <option value="환경노동위원회">환경노동위원회</option>
             </select>
-            <input type="text" id="unifiedSearch" placeholder="의원명, 보좌진, 의안명 검색" onkeyup="if(window.event.keyCode==13){handleFilter()}">
+            <input type="text" id="unifiedSearch" placeholder="의원명, 보좌진, 의안명, 뉴스 키워드 통합 검색" onkeyup="if(window.event.keyCode==13){handleFilter()}">
             <button class="search-btn" onclick="handleFilter()">검색</button>
         </div>
     </div>
@@ -92,10 +98,11 @@
             <option value="UNITS_DESC">다선순</option>
             <option value="NEAR_SEMINAR">행사임박순</option>
             <option value="PROPOSE_DESC">의안제안순</option>
+            <option value="LATEST_NEWS">최신기사순</option>
         </select>
     </div>
 
-    <div id="loading" class="loading" style="display:none;">📡 데이터 로딩 중...</div>
+    <div id="loading" class="loading" style="display:none;">📡 통합 데이터 조회 중...</div>
     
     <div class="table-wrapper">
         <table>
@@ -111,6 +118,7 @@
             <option value="UNITS_DESC">다선순</option>
             <option value="NEAR_SEMINAR">행사임박순</option>
             <option value="PROPOSE_DESC">의안제안순</option>
+            <option value="LATEST_NEWS">최신기사순</option>
         </select>
     </div>
 </div>
@@ -167,33 +175,73 @@
     async function handleFilter() {
         const committee = document.getElementById('committeeSelect').value;
         const text = document.getElementById('unifiedSearch').value.trim().toLowerCase();
-        let filtered = allMembers.filter(m => {
-            const mComm = !committee || (m.CMITS && m.CMITS.includes(committee));
-            const mBasic = !text || [m.HG_NM, m.STAFF, m.SECRETARY, m.SECRETARY2].some(v => v && v.toLowerCase().includes(text));
-            return mComm && mBasic;
-        });
-        if (text && text.length >= 2) {
-            document.getElementById('loading').style.display = 'block';
-            try {
-                const bRes = await fetch(`${BILL_ENDPOINT}?KEY=${BILL_KEY}&Type=json&pIndex=1&pSize=50&AGE=22&BILL_NAME=${encodeURIComponent(text)}`);
-                const bData = await bRes.json();
-                if (bData.TVBPMBILL11) {
-                    const names = bData.TVBPMBILL11[1].row.map(r => r.PROPOSER.split('(')[0].trim());
-                    const bMembers = allMembers.filter(m => names.some(n => n.includes(m.HG_NM)));
-                    filtered = Array.from(new Map([...filtered, ...bMembers].map(m => [m.MONA_CD, m])).values());
-                }
-            } catch (e) { console.error(e); } finally { document.getElementById('loading').style.display = 'none'; }
+        
+        const committeeMembers = allMembers.filter(m => !committee || (m.CMITS && m.CMITS.includes(committee)));
+
+        if (!text) {
+            committeeMembers.forEach(m => m.matchReason = ""); // 초기화
+            currentFiltered = committeeMembers;
+            handleSort(document.getElementById('topSort').value);
+            return;
         }
-        currentFiltered = filtered;
+
+        document.getElementById('loading').style.display = 'block';
+        let matchInfo = new Map(); // MONA_CD -> Reason
+
+        // 1. 기본 정보 매칭
+        committeeMembers.forEach(m => {
+            if ([m.HG_NM, m.STAFF, m.SECRETARY, m.SECRETARY2].some(v => v && v.toLowerCase().includes(text))) {
+                matchInfo.set(m.MONA_CD, "기본정보 매칭");
+            }
+        });
+
+        if (text.length >= 2) {
+            try {
+                const [billRes, newsRes] = await Promise.all([
+                    fetch(`${BILL_ENDPOINT}?KEY=${BILL_KEY}&Type=json&pIndex=1&pSize=100&AGE=22&BILL_NAME=${encodeURIComponent(text)}`),
+                    fetch(`${PROXY_URL}?url=${encodeURIComponent(`https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(text)}&display=100&sort=sim`)}`)
+                ]);
+
+                const billData = await billRes.json();
+                const newsData = await newsRes.json();
+
+                if (billData.TVBPMBILL11) {
+                    const billProposers = billData.TVBPMBILL11[1].row.map(r => r.PROPOSER.split('(')[0].trim());
+                    committeeMembers.forEach(m => {
+                        if (billProposers.some(p => p.includes(m.HG_NM))) {
+                            if(!matchInfo.has(m.MONA_CD)) matchInfo.set(m.MONA_CD, "의안명 매칭");
+                        }
+                    });
+                }
+
+                if (newsData.items) {
+                    committeeMembers.forEach(m => {
+                        if (newsData.items.some(item => item.title.includes(m.HG_NM))) {
+                            if(!matchInfo.has(m.MONA_CD)) matchInfo.set(m.MONA_CD, "뉴스 키워드 매칭");
+                        }
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        currentFiltered = committeeMembers.filter(m => {
+            if(matchInfo.has(m.MONA_CD)) {
+                m.matchReason = matchInfo.get(m.MONA_CD);
+                return true;
+            }
+            return false;
+        });
+        
+        document.getElementById('loading').style.display = 'none';
         handleSort(document.getElementById('topSort').value);
     }
 
     async function handleSort(criteria) {
         document.getElementById('topSort').value = criteria;
         document.getElementById('bottomSort').value = criteria;
-
         if (criteria === 'NEAR_SEMINAR') { await sortBySeminar(); return; }
         if (criteria === 'PROPOSE_DESC') { await sortByBillDate(); return; }
+        if (criteria === 'LATEST_NEWS') { await sortByLatestNews(); return; }
         currentFiltered.sort((a, b) => {
             if (criteria === 'HG_NM') return (a.HG_NM || '').localeCompare(b.HG_NM || '', 'ko');
             if (criteria === 'ROOM_DESC') return (parseInt(b.ASSEM_ADDR.replace(/[^0-9]/g, '')) || 0) - (parseInt(a.ASSEM_ADDR.replace(/[^0-9]/g, '')) || 0);
@@ -201,6 +249,23 @@
             return 0;
         });
         renderTable(currentFiltered);
+    }
+
+    async function sortByLatestNews() {
+        document.getElementById('loading').style.display = 'block';
+        const p = currentFiltered.map(async m => {
+            try {
+                const q = `"${m.POLY_NM}" "${m.HG_NM}"`;
+                const res = await fetch(`${PROXY_URL}?url=${encodeURIComponent(`https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(q)}&display=1&sort=date`)}`);
+                const data = await res.json();
+                m.latestNewsDate = data.items && data.items.length > 0 ? new Date(data.items[0].pubDate) : new Date(0);
+            } catch { m.latestNewsDate = new Date(0); }
+            return m;
+        });
+        currentFiltered = await Promise.all(p);
+        currentFiltered.sort((a, b) => b.latestNewsDate - a.latestNewsDate);
+        renderTable(currentFiltered);
+        document.getElementById('loading').style.display = 'none';
     }
 
     async function sortByBillDate() {
@@ -237,40 +302,43 @@
     }
 
     function renderTable(data) {
-        document.getElementById('memberTableBody').innerHTML = data.length ? data.map(item => `
+        document.getElementById('memberTableBody').innerHTML = data.length ? data.map(item => {
+            let reasonClass = 'reason-basic';
+            if(item.matchReason === '의안명 매칭') reasonClass = 'reason-bill';
+            if(item.matchReason === '뉴스 키워드 매칭') reasonClass = 'reason-news';
+            
+            return `
             <tr>
-                <td data-label="성명"><div><span class="name-link" onclick="openModal('${item.MONA_CD}')">${item.HG_NM}</span>${(item.REELE_GNB_NM && item.REELE_GNB_NM !== 'undefined') ? `<span class="reele-badge">${item.REELE_GNB_NM}</span>` : ''}</div></td>
+                <td data-label="성명">
+                    <div>
+                        <span class="name-link" onclick="openModal('${item.MONA_CD}')">${item.HG_NM}</span>
+                        ${(item.REELE_GNB_NM && item.REELE_GNB_NM !== 'undefined') ? `<span class="reele-badge">${item.REELE_GNB_NM}</span>` : ''}
+                        <br>${item.matchReason ? `<span class="match-reason ${reasonClass}">${item.matchReason}</span>` : ''}
+                    </div>
+                </td>
                 <td data-label="정당"><span class="badge">${item.POLY_NM}</span></td>
                 <td data-label="사무실 호실">${item.ASSEM_ADDR}</td>
                 <td data-label="보좌관" style="font-size:12px; color:#666;">${item.STAFF || '-'}</td>
                 <td data-label="선임비서관" style="font-size:12px; color:#666;">${item.SECRETARY || '-'}</td>
-            </tr>`).join('') : '<tr><td colspan="5" style="text-align:center; padding:40px;">결과가 없습니다.</td></tr>';
+            </tr>`;
+        }).join('') : '<tr><td colspan="5" style="text-align:center; padding:40px;">검색 결과가 없습니다.</td></tr>';
     }
 
     function openModal(monaCd) {
         const item = allMembers.find(m => m.MONA_CD === monaCd);
         if(!item) return;
         ['seminar', 'naver', 'google', 'yt', 'bill'].forEach(s => { document.getElementById(`${s}Section`).style.display = 'none'; document.getElementById(`${s}List`).innerHTML = ''; });
-        
-        // 버튼 텍스트 초기화
         document.getElementById('btnSeminar').innerText = '행사일정 보기';
         document.getElementById('btnBill').innerText = '법률안 발의 현황 보기';
-
         monitorPage = { naver: 1, google: 1, yt: 1, bill: 1, seminar: 1 };
         monitorData = { naver: [], google: [], yt: [], bill: [], seminar: [] };
         const reele = (item.REELE_GNB_NM && item.REELE_GNB_NM !== 'undefined') ? item.REELE_GNB_NM : '';
         const f = [
-            ["한자성명", item.HJ_NM], 
-            ["정당", item.POLY_NM], 
-            ["선거구", item.ORIG_NM], 
+            ["한자성명", item.HJ_NM], ["정당", item.POLY_NM], ["선거구", item.ORIG_NM], 
             ["당선 정보", reele ? `${reele} (${item.UNITS || ''})` : (item.UNITS || '-')], 
-            ["소속 위원회", item.CMITS], 
-            ["전화번호", item.TEL_NO], 
-            ["사무실 호실", item.ASSEM_ADDR], 
-            ["이메일", item.E_MAIL], 
-            ["홈페이지", item.HOMEPAGE ? `<a href="${item.HOMEPAGE}" target="_blank" style="color:var(--accent); font-weight:bold;">바로가기</a>` : '-'],
-            ["보좌관", item.STAFF], 
-            ["선임비서관", item.SECRETARY]
+            ["소속 위원회", item.CMITS], ["전화번호", item.TEL_NO], ["사무실 호실", item.ASSEM_ADDR], 
+            ["이메일", item.E_MAIL], ["홈페이지", item.HOMEPAGE ? `<a href="${item.HOMEPAGE}" target="_blank" style="color:var(--accent); font-weight:bold;">바로가기</a>` : '-'],
+            ["보좌관", item.STAFF], ["선임비서관", item.SECRETARY]
         ];
         document.getElementById('detailContent').innerHTML = f.map(x => `<tr><th>${x[0]}</th><td>${x[1] || '-'}</td></tr>`).join('');
         const q = `"${item.POLY_NM}" "${item.HG_NM}"`;
@@ -286,15 +354,11 @@
     async function toggleAccordion(type, val) {
         const sec = document.getElementById(`${type}Section`);
         const isOpen = sec.style.display === 'block';
-        
-        // 모든 섹션을 닫고 버튼 텍스트 초기화 (뉴스/유튜브 버튼은 텍스트 변경 대상이 아니므로 제외)
         ['seminar', 'naver', 'google', 'yt', 'bill'].forEach(t => document.getElementById(`${t}Section`).style.display = 'none');
         document.getElementById('btnSeminar').innerText = '행사일정 보기';
         document.getElementById('btnBill').innerText = '법률안 발의 현황 보기';
-
         if (!isOpen) {
             sec.style.display = 'block';
-            // 버튼 텍스트 '닫기'로 변경
             if (type === 'seminar') {
                 document.getElementById('btnSeminar').innerText = '행사일정 닫기';
                 if(!monitorData.seminar.length) await fetchSeminars(val); else renderSeminarList(); 
@@ -324,16 +388,7 @@
         let html = items.map(b => {
             let name = b.BILL_NAME;
             if (searchTxt && name.includes(searchTxt)) name = name.replace(new RegExp(`(${searchTxt})`, 'gi'), `<span class="highlight">$1</span>`);
-            return `
-                <div class="info-item" style="display:block;">
-                    <div style="display:flex; align-items:center; width:100%;">
-                        <span class="bill-status ${b.PASS_GUBUN === '계류의안' ? 'status-stay' : 'status-pass'}">${b.PASS_GUBUN}</span>
-                        <span class="info-title bill-link" onclick="window.open('${b.LINK_URL}')" style="flex:1;">${name}</span>
-                        <button class="summary-btn" onclick="toggleBillSummary('${b.BILL_NO}', this)">요약보기</button>
-                    </div>
-                    <div class="info-sub ${isToday(b.PROPOSE_DT) ? 'date-today' : ''}" style="margin-top:4px;">제안일: ${b.PROPOSE_DT} (의안번호: ${b.BILL_NO})</div>
-                    <div id="summary_${b.BILL_NO}" class="bill-summary-box">요약을 불러오는 중...</div>
-                </div>`;
+            return `<div class="info-item" style="display:block;"><div style="display:flex; align-items:center; width:100%;"><span class="bill-status ${b.PASS_GUBUN === '계류의안' ? 'status-stay' : 'status-pass'}">${b.PASS_GUBUN}</span><span class="info-title bill-link" onclick="window.open('${b.LINK_URL}')" style="flex:1;">${name}</span><button class="summary-btn" onclick="toggleBillSummary('${b.BILL_NO}', this)">요약보기</button></div><div class="info-sub ${isToday(b.PROPOSE_DT) ? 'date-today' : ''}" style="margin-top:4px;">제안일: ${b.PROPOSE_DT} (의안번호: ${b.BILL_NO})</div><div id="summary_${b.BILL_NO}" class="bill-summary-box">요약을 불러오는 중...</div></div>`;
         }).join('');
         if (items.length < monitorData.bill.length) html += `<button class="more-btn" onclick="monitorPage.bill++; renderBillList()">더보기 (${items.length}/${monitorData.bill.length})</button>`;
         div.innerHTML = html || '내역 없음';
@@ -350,7 +405,7 @@
             if (data.BPMBILLSUMMARY && data.BPMBILLSUMMARY[1].row) {
                 const txt = data.BPMBILLSUMMARY[1].row[0].SUMMARY || '요약 내용이 없습니다.';
                 box.innerHTML = `<strong>[제안이유 및 주요내용]</strong><br>${txt.replace(/\n/g, '<br>')}`;
-            } else { box.innerText = '요약 정보가 없습니다. (API 미등록)'; }
+            } else { box.innerText = '요약 정보가 없습니다.'; }
             box.setAttribute('data-loaded', 'true');
         } catch { box.innerText = '로드 실패'; }
     }
@@ -378,7 +433,12 @@
     function renderMonitorList(type) {
         const div = document.getElementById(`${type}List`);
         const items = monitorData[type].slice(0, monitorPage[type] * 10);
-        let html = items.map(i => `<a href="${i.link}" target="_blank" class="info-item"><div class="info-title">${i.title}</div><div class="info-sub ${i.today ? 'date-today' : ''}">${i.sub}</div></a>`).join('');
+        const searchTxt = document.getElementById('unifiedSearch').value.trim();
+        let html = items.map(i => {
+            let title = i.title;
+            if (searchTxt && title.includes(searchTxt)) title = title.replace(new RegExp(`(${searchTxt})`, 'gi'), `<span class="highlight">$1</span>`);
+            return `<a href="${i.link}" target="_blank" class="info-item"><div class="info-title">${title}</div><div class="info-sub ${i.today ? 'date-today' : ''}">${i.sub}</div></a>`;
+        }).join('');
         if (items.length < monitorData[type].length) html += `<button class="more-btn" onclick="monitorPage['${type}']++; renderMonitorList('${type}')">더보기 (${items.length}/${monitorData[type].length})</button>`;
         div.innerHTML = html || '결과 없음';
     }
