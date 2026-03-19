@@ -127,9 +127,9 @@
         <div id="naverSection" class="info-section"><div id="naverList"></div></div>
         <div id="googleSection" class="info-section"><div id="googleList"></div></div>
         <div id="ytSection" class="info-section"><div id="ytList"></div></div>
-        <button id="btnSeminar" class="seminar-trigger-btn">행사일정</button>
+        <button id="btnSeminar" class="seminar-trigger-btn">행사일정 보기</button>
         <div id="seminarSection" class="info-section"><div id="seminarList"></div></div>
-        <button id="btnBill" class="bill-trigger-btn">법률안 발의 현황</button>
+        <button id="btnBill" class="bill-trigger-btn">법률안 발의 현황 보기</button>
         <div id="billSection" class="info-section"><div id="billList"></div></div>
         <div style="padding: 15px; text-align: center; background: #f8f9fa;"><button onclick="closeModal()" style="background:#fff; color:var(--primary); border:1px solid var(--primary); width: 100px; height: 36px; font-weight: bold; border-radius: 6px; cursor: pointer;">닫기</button></div>
     </div>
@@ -251,6 +251,11 @@
         const item = allMembers.find(m => m.MONA_CD === monaCd);
         if(!item) return;
         ['seminar', 'naver', 'google', 'yt', 'bill'].forEach(s => { document.getElementById(`${s}Section`).style.display = 'none'; document.getElementById(`${s}List`).innerHTML = ''; });
+        
+        // 버튼 텍스트 초기화
+        document.getElementById('btnSeminar').innerText = '행사일정 보기';
+        document.getElementById('btnBill').innerText = '법률안 발의 현황 보기';
+
         monitorPage = { naver: 1, google: 1, yt: 1, bill: 1, seminar: 1 };
         monitorData = { naver: [], google: [], yt: [], bill: [], seminar: [] };
         const reele = (item.REELE_GNB_NM && item.REELE_GNB_NM !== 'undefined') ? item.REELE_GNB_NM : '';
@@ -281,12 +286,24 @@
     async function toggleAccordion(type, val) {
         const sec = document.getElementById(`${type}Section`);
         const isOpen = sec.style.display === 'block';
+        
+        // 모든 섹션을 닫고 버튼 텍스트 초기화 (뉴스/유튜브 버튼은 텍스트 변경 대상이 아니므로 제외)
         ['seminar', 'naver', 'google', 'yt', 'bill'].forEach(t => document.getElementById(`${t}Section`).style.display = 'none');
+        document.getElementById('btnSeminar').innerText = '행사일정 보기';
+        document.getElementById('btnBill').innerText = '법률안 발의 현황 보기';
+
         if (!isOpen) {
             sec.style.display = 'block';
-            if (type === 'seminar') { if(!monitorData.seminar.length) await fetchSeminars(val); else renderSeminarList(); }
-            else if (type === 'bill') { if(!monitorData.bill.length) await fetchBills(val); else renderBillList(); }
-            else { if(!monitorData[type].length) await fetchMonitorData(type, val); else renderMonitorList(type); }
+            // 버튼 텍스트 '닫기'로 변경
+            if (type === 'seminar') {
+                document.getElementById('btnSeminar').innerText = '행사일정 닫기';
+                if(!monitorData.seminar.length) await fetchSeminars(val); else renderSeminarList(); 
+            } else if (type === 'bill') {
+                document.getElementById('btnBill').innerText = '법률안 발의 현황 닫기';
+                if(!monitorData.bill.length) await fetchBills(val); else renderBillList(); 
+            } else { 
+                if(!monitorData[type].length) await fetchMonitorData(type, val); else renderMonitorList(type); 
+            }
         }
     }
 
