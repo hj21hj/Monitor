@@ -15,7 +15,21 @@
         select, input { flex: 1; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; -webkit-appearance: none; }
         input { flex: 2; border: 2px solid var(--main); }
         .btn-search { width: 100%; padding: 14px; background: var(--main); color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        
+        .recent-box { padding: 0 12px 10px; max-width: 800px; margin: 0 auto; display: flex; gap: 6px; overflow-x: auto; white-space: nowrap; }
+        .recent-item { font-size: 12px; background: #e0e4e8; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+
         #results { max-width: 800px; margin: 0 auto; padding: 10px; }
+        .result-count { padding: 5px 10px; font-size: 13px; color: #666; }
+
+        /* [변경] 회의별 그룹 헤더 스타일 */
+        .meeting-group { margin-top: 15px; }
+        .meeting-header { 
+            font-size: 12px; font-weight: bold; color: var(--main); 
+            background: #eef2f6; padding: 8px 12px; border-radius: 6px; 
+            margin-bottom: 8px; border-left: 4px solid var(--main);
+        }
+
         .speech-item { 
             background: white; border-radius: 8px; margin-bottom: 8px; padding: 15px; 
             display: flex; align-items: center; justify-content: space-between; 
@@ -26,6 +40,9 @@
         .info-top { font-size: 11px; color: #666; margin-bottom: 4px; font-weight: 600; }
         .info-title { font-size: 14px; font-weight: 500; color: #222; line-height: 1.4; word-break: keep-all; }
         .play-icon { width: 32px; height: 32px; background: #f0f3f7; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--main); font-size: 14px; flex-shrink: 0; }
+        
+        .loader { width: 25px; height: 25px; border: 3px solid #ddd; border-top: 3px solid var(--main); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .empty-state { text-align: center; padding: 80px 20px; color: #999; font-size: 14px; line-height: 1.6; }
     </style>
 </head>
@@ -41,46 +58,48 @@
         <input type="text" id="ipt_speaker" placeholder="의원 성함 입력" onkeypress="if(event.keyCode==13) doSearch();">
         <button class="btn-search" onclick="doSearch()">검색하기</button>
     </div>
-</div>
+    <div id="recent_queries" class="recent-box"></div>
+    </div>
 
 <div id="results">
     <div class="empty-state">검색 결과가 여기에 표시됩니다.</div>
 </div>
 
 <script>
-    // 국회 대수별 연도 데이터 (실제 임기 기준)
     const assemblyPeriods = {
-        '22': { start: 2024, end: 2026 }, // 현재 진행중 (2026년 가정)
+        '22': { start: 2024, end: 2026 },
         '21': { start: 2020, end: 2024 },
         '20': { start: 2016, end: 2020 },
         '19': { start: 2012, end: 2016 },
         '18': { start: 2008, end: 2012 }
     };
 
+    let allRows = []; 
     const selCt1 = document.getElementById('sel_ct1');
     const selYear = document.getElementById('sel_year');
 
-    // 대수 콤보박스 초기화
     for (let i = 22; i >= 18; i--) {
         selCt1.add(new Option(`${i}대 국회`, i));
     }
 
-    // 대수 선택 시 연도를 업데이트하는 함수
     function updateYearOptions() {
         const selectedCt1 = selCt1.value;
         const period = assemblyPeriods[selectedCt1];
-        
-        // 기존 연도 옵션 제거
         selYear.innerHTML = "";
-
-        // 해당 대수의 시작~종료 연도 채우기 (최신순)
         for (let y = period.end; y >= period.start; y--) {
             selYear.add(new Option(`${y}년`, y));
         }
     }
 
-    // 초기 실행 시 22대 기준으로 연도 세팅
     updateYearOptions();
+
+    function loadRecent() {
+        const list = JSON.parse(localStorage.getItem('recent_names') || '[]');
+        const box = document.getElementById('recent_queries');
+        box.innerHTML = list.map(v => `<div class="recent-item" onclick="quickSearch('${v}')">${v}</div>`).join('');
+    }
+    function quickSearch(n) { document.getElementById('ipt_speaker').value = n; doSearch(); }
+    loadRecent();
 
     async function doSearch() {
         const key = 'b44305f390624eabbd46f3bba38eede8';
@@ -88,7 +107,13 @@
         const resDiv = document.getElementById('results');
 
         if(!name) { alert("성함을 입력해 주세요."); return; }
-        resDiv.innerHTML = "<div class='empty-state'>데이터를 검색 중입니다...</div>";
+        
+        let recent = JSON.parse(localStorage.getItem('recent_names') || '[]');
+        recent = [name, ...recent.filter(x => x !== name)].slice(0, 5);
+        localStorage.setItem('recent_names', JSON.stringify(recent));
+        loadRecent();
+
+        resDiv.innerHTML = "<div class='loader'></div>";
 
         const url = `https://open.assembly.go.kr/portal/openapi/npeslxqbanwkimebr?KEY=${key}&Type=json&pIndex=1&pSize=100&CT1=${selCt1.value}&TAKING_DATE=${selYear.value}&ESSENTIAL_PERSON=${encodeURIComponent(name)}`;
 
@@ -96,23 +121,59 @@
             const response = await fetch(url);
             const data = await response.json();
             
-            if (!data.npeslxqbanwkimebr) {
-                resDiv.innerHTML = "<div class='empty-state'>검색 결과가 없습니다.<br>대수나 연도를 변경해 보세요.</div>";
+            if (!data.npeslxqbanwkimebr || !data.npeslxqbanwkimebr[1]) {
+                resDiv.innerHTML = "<div class='empty-state'>검색 결과가 없습니다.<br>의원 성함과 대수(연도)를 다시 확인해 주세요.</div>";
                 return;
             }
 
-            const rows = data.npeslxqbanwkimebr[1].row;
-            resDiv.innerHTML = "";
+            allRows = data.npeslxqbanwkimebr[1].row;
+            displayResults(allRows);
 
-            rows.forEach(row => {
-                const videoLink = row.LINK_URL || row.VIDEO_URL || "";
+        } catch (e) {
+            console.error(e);
+            resDiv.innerHTML = "<div class='empty-state'>통신 오류가 발생했습니다.<br>잠시 후 다시 시도해 주세요.</div>";
+        }
+    }
+
+    // [수정] 같은 회의끼리 묶어서 표시하는 함수
+    function displayResults(rows) {
+        const resDiv = document.getElementById('results');
+        resDiv.innerHTML = `<div class="result-count">총 ${rows.length}건의 발언이 검색되었습니다.</div>`;
+
+        if(rows.length === 0) {
+            resDiv.innerHTML += "<div class='empty-state'>검색된 결과가 없습니다.</div>";
+            return;
+        }
+
+        // 1. 회의명(MEETING_NAME) 기준으로 데이터 그룹화
+        const groups = rows.reduce((acc, row) => {
+            const mName = row.MEETING_NAME || "기타 회의";
+            if (!acc[mName]) acc[mName] = [];
+            acc[mName].push(row);
+            return acc;
+        }, {});
+
+        // 2. 그룹별로 화면에 렌더링
+        Object.keys(groups).forEach(meetingName => {
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'meeting-group';
+            
+            // 회의명 헤더 추가
+            const header = document.createElement('div');
+            header.className = 'meeting-header';
+            header.innerText = meetingName;
+            groupDiv.appendChild(header);
+
+            // 해당 회의의 발언들 추가
+            groups[meetingName].forEach(row => {
+                const videoLink = (row.LINK_URL || row.VIDEO_URL || "").trim();
                 const speaker = row.ESSENTIAL_PERSON ? row.ESSENTIAL_PERSON.split('/')[0] : "알 수 없음";
 
                 const item = document.createElement('div');
                 item.className = 'speech-item';
                 item.onclick = () => {
                     if(videoLink && videoLink !== "about:blank") {
-                        const finalUrl = videoLink.replace("http://", "https://");
+                        const finalUrl = videoLink.startsWith('http://') ? videoLink.replace("http://", "https://") : videoLink;
                         window.open(finalUrl, '_blank');
                     } else {
                         alert("이 영상은 현재 링크 정보를 불러올 수 없습니다.");
@@ -121,16 +182,15 @@
                 
                 item.innerHTML = `
                     <div class="info-wrap">
-                        <div class="info-top">${row.TAKING_DATE} | ${speaker} | ${row.MEETING_NAME || ''}</div>
+                        <div class="info-top">${row.TAKING_DATE} | ${speaker}</div>
                         <div class="info-title">${row.TITLE}</div>
                     </div>
                     <div class="play-icon">▶</div>
                 `;
-                resDiv.appendChild(item);
+                groupDiv.appendChild(item);
             });
-        } catch (e) {
-            resDiv.innerHTML = "<div class='empty-state'>통신 오류가 발생했습니다.</div>";
-        }
+            resDiv.appendChild(groupDiv);
+        });
     }
 </script>
 </body>
