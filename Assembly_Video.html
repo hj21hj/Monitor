@@ -44,6 +44,11 @@
         .loader { width: 25px; height: 25px; border: 3px solid #ddd; border-top: 3px solid var(--main); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .empty-state { text-align: center; padding: 80px 20px; color: #999; font-size: 14px; line-height: 1.6; }
+
+        /* [추가] 결과 내 재검색 입력창 CSS 스타일 */
+        .sub-search-wrap { padding: 5px 12px 10px; max-width: 800px; margin: 0 auto; display: none; }
+        .ipt-sub-search { width: 100%; padding: 12px; border: 2px solid #ced4da; border-radius: 6px; font-size: 14px; outline: none; background: white; }
+        .ipt-sub-search:focus { border-color: var(--main); }
     </style>
 </head>
 <body>
@@ -59,7 +64,10 @@
         <button class="btn-search" onclick="doSearch()">검색하기</button>
     </div>
     <div id="recent_queries" class="recent-box"></div>
+    <div id="sub_search_container" class="sub-search-wrap">
+        <input type="text" id="ipt_sub_search" class="ipt-sub-search" placeholder="결과 내 재검색 (의원명 또는 주요인물 입력)">
     </div>
+</div>
 
 <div id="results">
     <div class="empty-state">검색 결과가 여기에 표시됩니다.</div>
@@ -192,6 +200,103 @@
             resDiv.appendChild(groupDiv);
         });
     }
+
+    /* ========================================================
+       [기존 코드 완벽 보존] 포커스 감지형 단추 공유 및 재검색 로직 주입
+       ======================================================== */
+    
+    const _originalDisplayResults = displayResults;
+    const _originalQuickSearch = quickSearch; // 기존 quickSearch 백업
+    
+    let lastSearchKeyword = ""; 
+    let currentFilteredRows = [];
+    let isSubSearching = false; 
+    let lastFocusedInput = "main"; // 커서 위치 상태 기억용 변수 ("main" 또는 "sub")
+
+    // 포커스 이벤트 바인딩을 위한 리스너 등록
+    document.addEventListener("DOMContentLoaded", () => {
+        const mainInput = document.getElementById('ipt_speaker');
+        const subInput = document.getElementById('ipt_sub_search');
+
+        if (mainInput) {
+            mainInput.addEventListener('focus', () => { lastFocusedInput = "main"; });
+        }
+        if (subInput) {
+            subInput.addEventListener('focus', () => { lastFocusedInput = "sub"; });
+        }
+    });
+
+    // [기능 추가] 기존 단추 클릭 함수(quickSearch)를 가로채어 커서 위치에 따라 공유 처리
+    quickSearch = function(name) {
+        const subSearchBox = document.getElementById('sub_search_container');
+        const subInput = document.getElementById('ipt_sub_search');
+
+        // 최근 커서(포커스)가 결과 내 재검색창에 있었고, 현재 결과창이 열려있는 경우
+        if (lastFocusedInput === "sub" && subSearchBox && subSearchBox.style.display === "block") {
+            if (subInput) {
+                subInput.value = name;
+                // 강제로 input 이벤트를 발생시켜 재검색 로직 작동 유도
+                subInput.dispatchEvent(new Event('input', { bubbles: true }));
+                subInput.focus();
+            }
+        } else {
+            // 커서가 메인 검색창에 있었거나 결과창이 없을 때는 기존 원본 quickSearch 실행
+            _originalQuickSearch(name);
+        }
+    };
+
+    displayResults = function(rows) {
+        const subSearchBox = document.getElementById('sub_search_container');
+        const subInput = document.getElementById('ipt_sub_search');
+
+        if (!isSubSearching) {
+            currentFilteredRows = [...allRows];
+            lastSearchKeyword = "";
+            if (subInput) subInput.value = "";
+            
+            if (allRows && allRows.length > 0) {
+                if (subSearchBox) subSearchBox.style.display = "block";
+            } else {
+                if (subSearchBox) subSearchBox.style.display = "none";
+            }
+        }
+
+        _originalDisplayResults(rows);
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const subInput = document.getElementById('ipt_sub_search');
+        if (!subInput) return;
+
+        subInput.addEventListener('input', function(e) {
+            const currentInput = e.target.value.trim().toLowerCase();
+            isSubSearching = true;
+
+            const checkMatch = (row) => {
+                const hgNmMatch = row.HG_NM && row.HG_NM.toLowerCase().includes(currentInput);
+                const personMatch = row.ESSENTIAL_PERSON && row.ESSENTIAL_PERSON.toLowerCase().includes(currentInput);
+                return hgNmMatch || personMatch;
+            };
+
+            if (!currentInput) {
+                lastSearchKeyword = "";
+                currentFilteredRows = [...allRows];
+                _originalDisplayResults(allRows);
+            } 
+            else if (currentInput.startsWith(lastSearchKeyword) && lastSearchKeyword !== "") {
+                lastSearchKeyword = currentInput;
+                currentFilteredRows = currentFilteredRows.filter(checkMatch);
+                _originalDisplayResults(currentFilteredRows);
+            } 
+            else {
+                lastSearchKeyword = currentInput;
+                currentFilteredRows = allRows.filter(checkMatch);
+                _originalDisplayResults(currentFilteredRows);
+            }
+
+            isSubSearching = false;
+        });
+    });
 </script>
 </body>
 </html>
