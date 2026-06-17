@@ -197,7 +197,14 @@
         if (criteria === 'PROPOSE_DESC') { await sortByBillDate(); return; }
         currentFiltered.sort((a, b) => {
             if (criteria === 'HG_NM') return (a.HG_NM || '').localeCompare(b.HG_NM || '', 'ko');
-            if (criteria === 'ROOM_DESC') return (parseInt(b.ASSEM_ADDR.replace(/[^0-9]/g, '')) || 0) - (parseInt(a.ASSEM_ADDR.replace(/[^0-9]/g, '')) || 0);
+            if (criteria === 'ROOM_DESC') return (if (criteria === 'ROOM_DESC') {
+    const getRoomNum = (addr) => {
+        if (!addr) return 0;
+        const match = addr.match(/(\d+)/); // 첫 번째 등장하는 숫자 묶음 추출
+        return match ? parseInt(match[0], 10) : 0;
+    };
+    return getRoomNum(a.ASSEM_ADDR) - getRoomNum(b.ASSEM_ADDR); // 오름차순 (101호 -> 201호 -> 301호)
+}
             if (criteria === 'UNITS_DESC') return (b.UNITS || '').split(',').length - (a.UNITS || '').split(',').length;
             return 0;
         });
