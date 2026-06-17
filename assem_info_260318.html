@@ -106,7 +106,7 @@
     <div class="sort-row">
         <select id="topSort" class="sort-select" onchange="handleSort(this.value)">
             <option value="ROOM_DESC" selected>호실순</option>
-            <option value="HG_NM">성명순</option>
+            <option value="HG_NM">이름순</option>
             <option value="UNITS_DESC">다선순</option>
             <option value="NEAR_SEMINAR">행사임박순</option>
             <option value="PROPOSE_DESC">의안제안순</option>
@@ -126,7 +126,7 @@
     <div class="sort-row" style="margin-top: 15px;">
         <select id="bottomSort" class="sort-select" onchange="handleSort(this.value)">
             <option value="ROOM_DESC" selected>호실순</option>
-            <option value="HG_NM">성명순</option>
+            <option value="HG_NM">이름순</option>
             <option value="UNITS_DESC">다선순</option>
             <option value="NEAR_SEMINAR">행사임박순</option>
             <option value="PROPOSE_DESC">의안제안순</option>
@@ -404,7 +404,7 @@
                 <td data-label="보좌관" style="font-size:12px; color:#666;">${item.STAFF || '-'}</td>
                 <td data-label="선임비서관" style="font-size:12px; color:#666;">${item.SECRETARY || '-'}</td>
             </tr>`;
-        }).join('') : '<tr><td colspan="5" style="text-align:center; padding:40px;">선택하신 조건에 해당하는 의원실 정보를 찾을 수 없습니다.<br>위원회를 \'전체 위원회\'로 변경하시거나, 검색어를 다시 확인해 주세요.</td></tr>';
+        }).join('') : '<tr><td colspan="5" style="text-align:center; padding:40px;">선택하신 조건에 해당하는 의원실 정보를 찾을 수 없습니다.<br>위원회를 \'전체 위원회\'와 \'이름순\' 변경하시거나, 검색어를 다시 확인해 주세요.</td></tr>';
     }
 
     function openModal(monaCd) {
