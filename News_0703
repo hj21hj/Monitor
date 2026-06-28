@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KPF News 모니터링 (Ver 0.91)</title>
+    <style>
+        :root { --primary: #004085; --naver: #03cf5d; --yt: #ff0000; --bg: #f4f7fa; --tab-bg: #ffffff; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; }
+
+        .dashboard-grid { display: grid; grid-template-columns: 320px 1fr 1fr 380px; gap: 12px; height: 100vh; padding: 15px; }
+        .column { display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; }
+        .card { background: #fff; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; height: 100%; min-height: 0; }
+        .title { font-size: 1.05rem; font-weight: bold; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        
+        .local-search { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 0.9rem; background: #fafafa; }
+        .scroll-area { flex-grow: 1; overflow-y: auto; padding-right: 4px; }
+        .date-filter { display: flex; gap: 5px; margin-bottom: 12px; align-items: center; }
+        .date-filter input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.8rem; }
+
+        .filter-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; overflow-y: auto; }
+        .filter-btn { padding: 10px; border: 1px solid #ddd; background: #fff; border-radius: 6px; font-size: 0.85rem; text-align: left; cursor: pointer; transition: all 0.2s; }
+        .filter-btn.active { background: var(--primary); color: #fff; font-weight: bold; border-color: var(--primary); }
+
+        .item { padding: 15px 0; border-bottom: 1px solid #f1f1f1; text-decoration: none; color: inherit; display: block; }
+        .item-title { font-size: 0.95rem; font-weight: 600; line-height: 1.4; margin-bottom: 6px; }
+        .item-info { font-size: 0.8rem; color: #888; display: flex; justify-content: space-between; }
+        .press-badge { color: var(--naver); font-weight: bold; margin-right: 5px; background: #f0fff4; padding: 2px 5px; border-radius: 3px; }
+        
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 15px; padding: 12px 0; flex-shrink: 0; border-top: 1px solid #eee; }
+        .btn-page { padding: 8px 12px; border: 1px solid #ddd; background: #fff; font-size: 0.85rem; cursor: pointer; border-radius: 6px; }
+        .mobile-nav { display: none; }
+
+        @media (max-width: 1024px) {
+            body { padding-bottom: 60px; }
+            .dashboard-grid { display: block; padding: 0; height: calc(100vh - 60px); }
+            .column { display: none; height: 100%; padding: 10px; }
+            .column.active { display: flex; }
+            .mobile-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #fff; border-top: 1px solid #ddd; z-index: 1000; justify-content: space-around; align-items: center; }
+            .nav-item { flex: 1; text-align: center; font-size: 0.75rem; color: #777; cursor: pointer; }
+            .nav-item.active { color: var(--primary); font-weight: bold; }
+        }
+        .yt-thumb { width: 100%; aspect-ratio: 16/9; background-size: cover; border-radius: 8px; margin-bottom: 8px; background-color: #000; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-grid">
+    <div class="column active" id="config-col">
+        <div class="card">
+            <div class="title"> 모니터링 설정</div>
+            <div class="date-filter">
+                <input type="date" id="startDate">
+                <span>~</span>
+                <input type="date" id="endDate">
+            </div>
+            <div class="filter-group" id="filterGroup">
+                <button class="filter-btn active" onclick="applyFilter(0)">1. 재단 전체</button>
+                <button class="filter-btn" onclick="applyFilter(1)">2. 신문법</button>
+                <button class="filter-btn" onclick="applyFilter(2)">3. 정부광고</button>
+                <button class="filter-btn" onclick="applyFilter(3)">4. 미디어거버넌스</button>
+                <button class="filter-btn" onclick="applyFilter(4)">5. 미디어리터러시</button>
+                <button class="filter-btn" onclick="applyFilter(5)">6. 바우처/개혁</button>
+                <button class="filter-btn" onclick="applyFilter(6)">7. 유관기관</button>
+                <button class="filter-btn" onclick="applyFilter(7)">8. 주요 인물</button>
+                <button class="filter-btn" onclick="applyFilter(8)">9. 공공기관</button>
+                <button class="filter-btn" onclick="applyFilter(9)">10. 국회/부처</button>
+                <button class="filter-btn" onclick="applyFilter(10)">11. 출입기자</button>
+                <button class="filter-btn" onclick="applyFilter(11)" style="color:#d9534f; font-weight:bold;">12. 주요 보도자료</button>
+            </div>
+            <input type="text" id="queryInput" placeholder="검색어 직접 입력" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #ddd; border-radius:6px;">
+            <button class="btn-page" style="width:100%; background:#333; color:#fff; font-weight:bold; padding:15px; border-radius:8px;" onclick="fetchAllAndGo()">조회 및 결과보기</button>
+        </div>
+    </div>
+
+    <div class="column" id="naver-col">
+        <div class="card">
+            <div class="title" style="color:var(--naver)">
+                <span id="nHeader">🟢 네이버</span>
+            </div>
+            <input type="text" class="local-search" placeholder="결과 내 검색..." onkeyup="reSearchList('naverList', this.value)">
+            <div id="naverList" class="scroll-area"></div>
+            <div class="pagination" id="nPager">
+                <button class="btn-page" onclick="changeNPage(-1)">이전</button>
+                <span id="nPageNum" class="page-num">1</span>
+                <button class="btn-page" onclick="changeNPage(1)">다음</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="column" id="google-col">
+        <div class="card">
+            <div class="title" style="color:var(--primary)">
+                <span id="gHeader">🔵 구글</span>
+            </div>
+            <input type="text" class="local-search" placeholder="결과 내 검색..." onkeyup="reSearchList('googleList', this.value)">
+            <div id="googleList" class="scroll-area"></div>
+            <div class="pagination" id="gPager">
+                <button class="btn-page" onclick="changeGPage(-1)">이전</button>
+                <span id="gPageNum" class="page-num">1</span>
+                <button class="btn-page" onclick="changeGPage(1)">다음</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="column" id="yt-col">
+        <div class="card">
+            <div class="title" style="color:var(--yt)">
+                <span>🎬 유튜브</span>
+            </div>
+            <input type="text" class="local-search" placeholder="결과 내 검색..." onkeyup="reSearchList('ytList', this.value)">
+            <div id="ytList" class="scroll-area"></div>
+        </div>
+    </div>
+</div>
+
+<div class="mobile-nav">
+    <div class="nav-item active" id="nav-config" onclick="switchTab('config-col', 0)">⚙️<br>설정</div>
+    <div class="nav-item" id="nav-naver" onclick="switchTab('naver-col', 1)">🟢<br>네이버</div>
+    <div class="nav-item" id="nav-google" onclick="switchTab('google-col', 2)">🔵<br>구글</div>
+    <div class="nav-item" id="nav-yt" onclick="switchTab('yt-col', 3)">🎬<br>유튜브</div>
+</div>
+
+<script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbx674hDBg15__FCk1XB2HqOuxWMNB6Y2qn7b7WATT3QMCBNb4vPQzml7uZY8MJtbalU3A/exec";
+    const GOOGLE_API_KEY = 'AIzaSyBFNFVqguQgjyy6jQWYgtTaiUn67A2DVMY';
+    const ASSEMBLY_KEY = 'f5f19d8da12d4a9bbf83a305a9bd680d';
+
+    const foundationPrefix = "(한국언론진흥재단 | 언론진흥재단)";
+    const pressQuery = `${foundationPrefix} ("김문영" | "김성권" | "김위수" | "김혜은" | "김혜진" | "문용필" | "박지훈" | "송현경" | "신재우" | "우성민" | "이교준" | "이선영" | "이세원" | "이환범" | "장근욱" | "장슬기" | "정동근" | "정성택" | "한국일보 강유빈" | "현지용" | "사지원" | "김정한 차장님" | "전성민" | "김태언" | "전병남" | "이복진" | "정지용" | "조명희의원실 채영권" | "김현아" | "서형석 기자님" | "홍지현" | "최성진" | "유정무" | "신동흔" | "박성동" | "어환희" | "엄재희" | "조기용" | "서믿음" | "김용석" | "하남현" | "이혜진" | "윤호전"  | "김희경" | "이호재" | "김유태" | "김나연" | "신진아" | "정진수" | "전혜원" | "김진휘" | "김지예" | "조종엽" | "정주원" | "조성민" | "고성욱" | "이종길" | "이태훈" | "정혜진" | "윤수현" | "고미혜" | "윤민식" | "유승목" | "홍석우" | "박수련" | "박대의" | "박대형" | "김기윤" | "정철운" | "최용식" | "남보라" | "조정아" | "신새롬" | "유선준" | "김슬기" | "손의연" | "장병호" | "김세관" | "신상호" | "송석주" | "김석" | "강푸른" | "김상운" | "최승영" | "전종휘" | "박강수" | "최인철" | "이한빛" | "장예림" | "이화연" | "노진호")`;
+
+    const filterKeywords = ["한국언론진흥재단 | 언론진흥재단 | 언론재단", "(한국언론진흥재단 | 언론진흥재단 | 언론재단) 신문법", "(한국언론진흥재단 | 언론진흥재단 | 언론재단) 정부광고", "(한국언론진흥재단 | 언론진흥재단 | 언론재단) 미디어거버넌스", "(한국언론진흥재단 | 언론진흥재단 | 언론재단) 미디어리터러시", "미디어바우처 | 미디어특위 | 언론진흥기금 | 지역신문발전기금 | 언론노조 | 언론정책 | 언론개혁", "문체위 | 세종프레스센터 | 뉴스제휴평가위원회 | 제평위 | 신문윤리위원회 | 김효재", "오세욱 | 박영흠 | 진민정", "공공기관", "신문 | 인터넷신문 | 방송 | 통신 | 국회 | 문화체육관광부 | 과학기술방송통신부", pressQuery, "PRE_RELEASE_MODE"];
+
+    const mediaMap = {'001': '연합뉴스', '005': '국민일보', '020': '동아일보', '021': '문화일보', '023': '조선일보', '025': '중앙일보', '028': '한겨레', '032': '경향신문', '081': '서울신문', '214': 'MBC', '055': 'SBS', '052': 'YTN', '056': 'KBS', '003': '내일신문', '011': '서울경제', '014': '파이낸셜뉴스', '015': '한국경제', '018': '이데일리', '009': '매일경제', '031': '아이뉴스24', '047': '오마이뉴스', '006': '미디어오늘', '119': '데일리안'};
+    let nPage = 1, gPage = 1, gCachedItems = [], isReleaseMode = false;
+
+    function getDateQuery() {
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+        return (start ? ` after:${start}` : "") + (end ? ` before:${end}` : "");
+    }
+
+    async function fetchNaver() {
+        if(isReleaseMode) return fetchMCST();
+        const q = document.getElementById('queryInput').value;
+        const startRaw = document.getElementById('startDate').value;
+        const endRaw = document.getElementById('endDate').value;
+        const start = startRaw.replace(/-/g, '');
+        const end = endRaw.replace(/-/g, '');
+        const dateParam = start && end ? `&start_date=${start}&end_date=${end}` : "";
+        
+        const api = `https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(q)}&display=50&start=${((nPage-1)*15)+1}&sort=date${dateParam}`;
+        
+        try {
+            const res = await fetch(`${GAS_URL}?url=${encodeURIComponent(api)}`);
+            const data = await res.json();
+            const filteredItems = (data.items || []).filter(item => {
+                if (!startRaw || !endRaw) return true;
+                const pubDate = new Date(item.pubDate);
+                const targetStart = new Date(startRaw + "T00:00:00");
+                const targetEnd = new Date(endRaw + "T23:59:59");
+                return pubDate >= targetStart && pubDate <= targetEnd;
+            });
+
+            document.getElementById('naverList').innerHTML = filteredItems.map(i => {
+                let press = "";
+                const m = i.link.match(/oid=(\d+)/);
+                if(m && mediaMap[m[1]]) press = mediaMap[m[1]];
+                else {
+                    try { press = new URL(i.link).hostname.replace('www.', ''); } catch(e) { press = "link"; }
+                }
+                return `<a href="${i.link}" target="_blank" class="item"><div class="item-title">${i.title.replace(/<[^>]*>?/gm, '')}</div><div class="item-info"><span class="press-badge">${press}</span><span>${new Date(i.pubDate).toLocaleDateString()}</span></div></a>`;
+            }).join('') || '결과 없음';
+            document.getElementById('nPageNum').innerText = nPage;
+        } catch(e) { document.getElementById('naverList').innerHTML = '연결 오류'; }
+    }
+
+    async function fetchGoogle() {
+        if(isReleaseMode) return fetchAssembly();
+        if (gPage === 1 || gCachedItems.length === 0) {
+            const q = document.getElementById('queryInput').value + getDateQuery();
+            const url = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=ko&gl=KR&ceid=KR:ko`;
+            try {
+                const res = await fetch(`${GAS_URL}?url=${encodeURIComponent(url)}`);
+                const text = await res.text();
+                const xml = new DOMParser().parseFromString(text, "text/xml");
+                gCachedItems = Array.from(xml.querySelectorAll("item"));
+                gCachedItems.sort((a,b)=> new Date(b.querySelector("pubDate").textContent) - new Date(a.querySelector("pubDate").textContent));
+            } catch(e) { gCachedItems = []; }
+        }
+        const paged = gCachedItems.slice((gPage-1)*15, gPage*15);
+        document.getElementById('googleList').innerHTML = paged.map(n => `<a href="${n.querySelector("link").textContent}" target="_blank" class="item"><div class="item-title">${n.querySelector("title").textContent}</div><div class="item-info"><span style="color:var(--primary); font-weight:bold;">${n.querySelector("source")?.textContent || ''}</span><span>${new Date(n.querySelector("pubDate").textContent).toLocaleDateString()}</span></div></a>`).join('') || '결과 없음';
+        document.getElementById('gPageNum').innerText = gPage;
+    }
+
+    async function fetchYoutube() {
+        const q = document.getElementById('queryInput').value;
+        const startRaw = document.getElementById('startDate').value;
+        const endRaw = document.getElementById('endDate').value;
+        let ytQuery = q.replace(/[()|]/g, ' ').replace(/\s+/g, ' ').trim();
+        let dateParams = "";
+        if (startRaw) dateParams += `&publishedAfter=${startRaw}T00:00:00Z`;
+        if (endRaw) dateParams += `&publishedBefore=${endRaw}T23:59:59Z`;
+
+        try {
+            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(ytQuery)}&maxResults=25&order=date&type=video${dateParams}&key=${GOOGLE_API_KEY}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            const videos = data.items || [];
+            document.getElementById('ytList').innerHTML = videos.map(v => 
+                `<a href="https://www.youtube.com/watch?v=${v.id.videoId}" target="_blank" class="item">
+                    <div class="yt-thumb" style="background-image:url('${v.snippet.thumbnails.medium.url}')"></div>
+                    <div class="item-title" style="font-size:0.9rem;">${v.snippet.title}</div>
+                    <div class="item-info"><span>${v.snippet.channelTitle}</span><span>${new Date(v.snippet.publishedAt).toLocaleDateString()}</span></div>
+                </a>`
+            ).join('') || '결과 없음';
+        } catch(e) { document.getElementById('ytList').innerHTML = '유튜브 로드 실패'; }
+    }
+
+    async function fetchMCST() {
+        const rssUrl = "https://www.mcst.go.kr/common/rss/rssGenXml.jsp?pMenuCD=0302000000";
+        try {
+            const res = await fetch(`${GAS_URL}?url=${encodeURIComponent(rssUrl)}`);
+            const text = await res.text();
+            const xml = new DOMParser().parseFromString(text, "text/xml");
+            const items = Array.from(xml.querySelectorAll("item"));
+
+            const htmlContent = items.map(i => {
+                const getSafeVal = (tagName) => {
+                    const node = i.getElementsByTagName(tagName)[0];
+                    return node ? node.textContent.trim() : "";
+                };
+                const title = getSafeVal("title");
+                const link = getSafeVal("link");
+                const rawDate = getSafeVal("pubDate");
+                const category = getSafeVal("category");
+                const dateOnly = rawDate.substring(0, 8);
+                const formattedDate = dateOnly.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
+
+                return `<a href="${link}" target="_blank" class="item">
+                            <div class="item-title">${title}</div>
+                            <div class="item-info">
+                                <span class="press-badge" style="background:#e8f5e9; color:#2e7d32;">문체부 [${category}]</span>
+                                <span>${formattedDate}</span>
+                            </div>
+                        </a>`;
+            }).join('');
+
+            document.getElementById('naverList').innerHTML = htmlContent || '보도자료 없음';
+        } catch(e) { document.getElementById('naverList').innerHTML = '문체부 로드 실패'; }
+    }
+
+    async function fetchAssembly() {
+        const apiUrl = `https://open.assembly.go.kr/portal/openapi/ninnagrlaelvtzfnt?KEY=${ASSEMBLY_KEY}&Type=json&pIndex=1&pSize=30`;
+        try {
+            const res = await fetch(apiUrl);
+            const data = await res.json();
+            if (data.ninnagrlaelvtzfnt && data.ninnagrlaelvtzfnt[1].row) {
+                document.getElementById('googleList').innerHTML = data.ninnagrlaelvtzfnt[1].row.map(r => 
+                    `<a href="${r.CONTENT_URL}" target="_blank" class="item">
+                        <div class="item-title">${r.TITLE}</div>
+                        <div class="item-info">
+                            <span style="color:var(--primary); font-weight:bold;">국회보도 (${r.BBS_TITLE})</span>
+                            <span>${r.WRITE_DATE}</span>
+                        </div>
+                    </a>`).join('');
+            } else { document.getElementById('googleList').innerHTML = '자료 없음'; }
+        } catch(e) { document.getElementById('googleList').innerHTML = '국회 로드 실패'; }
+    }
+
+    function applyFilter(idx) {
+        isReleaseMode = (idx === 11);
+        const buttons = document.querySelectorAll('.filter-btn');
+        buttons.forEach((btn, i) => btn.classList.toggle('active', i === idx));
+        const navNaver = document.getElementById('nav-naver');
+        const navGoogle = document.getElementById('nav-google');
+
+        if(isReleaseMode) {
+            document.getElementById('nHeader').innerText = "🏛️ 문체부 보도자료";
+            document.getElementById('gHeader').innerText = "🏛️ 국회 보도자료";
+            navNaver.innerHTML = "<br>문체부"; navGoogle.innerHTML = "<br>국회";
+            document.getElementById('nPager').style.display = "none";
+            document.getElementById('gPager').style.display = "none";
+            document.getElementById('queryInput').value = "보도자료 미러링 모드";
+        } else {
+            document.getElementById('nHeader').innerText = "🟢 네이버";
+            document.getElementById('gHeader').innerText = "🔵 구글";
+            navNaver.innerHTML = "🟢<br>네이버"; navGoogle.innerHTML = "🔵<br>구글";
+            document.getElementById('nPager').style.display = "flex";
+            document.getElementById('gPager').style.display = "flex";
+            document.getElementById('queryInput').value = filterKeywords[idx];
+        }
+        nPage = 1; gPage = 1; fetchAll();
+    }
+
+    function fetchAll() { 
+        document.querySelectorAll('.local-search').forEach(input => input.value = '');
+        fetchNaver(); fetchGoogle(); fetchYoutube(); 
+    }
+    
+    function fetchAllAndGo() { fetchAll(); if(window.innerWidth <= 1024) switchTab('naver-col', 1); }
+    function switchTab(id, idx) {
+        document.querySelectorAll('.column').forEach(c => c.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach((n, i) => n.classList.toggle('active', i === idx));
+    }
+    function reSearchList(id, k) {
+        const items = document.getElementById(id).querySelectorAll('.item');
+        items.forEach(i => i.style.display = i.innerText.toLowerCase().includes(k.toLowerCase()) ? 'block' : 'none');
+    }
+    function changeNPage(s) { nPage = Math.max(1, nPage+s); fetchNaver(); }
+    function changeGPage(s) { gPage = Math.max(1, Math.min(Math.ceil(gCachedItems.length/15), gPage+s)); fetchGoogle(); }
+
+    window.onload = function() {
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        let startDate = new Date(now);
+        startDate.setDate(now.getDate() - (now.getDay() === 1 ? 3 : 1));
+        document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+        document.getElementById('endDate').value = todayStr;
+        applyFilter(0);
+    };
+</script>
+</body>
+</html>
