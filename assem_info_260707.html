@@ -3,7 +3,179 @@
 <head>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-DZN77QMBX7"></script>
     <script>
-    const PROXY_URL = "https://script.google.com/macros/s/AKfycbx674hDBg15__FCk1XB2HqOuxWMNB6Y2qn7b7WATT3QMCBNb4vPQzml7uZY8MJtbalU3A/exec";
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-DZN77QMBX7');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>제22대 국회 의원실 검색</title>
+    <style>
+        :root { --primary: #003478; --accent: #0056b3; --bg: #f8f9fa; --border: #dee2e6; --input-height: 38px; }
+        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); margin: 0; padding: 10px; color: #333; -webkit-tap-highlight-color: transparent; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        header { border-bottom: 2px solid var(--primary); margin-bottom: 15px; padding-bottom: 10px; }
+        h1 { color: var(--primary); font-size: 18px; margin: 0; text-align: center; }
+        .search-area { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; padding: 12px; background: #f1f3f5; border-radius: 8px; }
+        .search-row { display: flex; flex-direction: column; gap: 8px; }
+        select, input, .search-btn { width: 100%; height: var(--input-height); padding: 0 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        .search-btn { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+        .sort-row { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+        .sort-select { width: auto !important; height: 30px !important; padding: 0 8px !important; font-size: 12px !important; border-radius: 4px; background-color: #fff; border: 1px solid var(--border); }
+        .table-wrapper { overflow-x: auto; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        @media (min-width: 768px) { .search-row { flex-direction: row; } #committeeSelect { flex: 3; } #unifiedSearch { flex: 5.5; } .search-btn { flex: 1.5; } h1 { font-size: 22px; text-align: left; } body { padding: 20px; } }
+        #memberTableBody tr { display: flex; flex-direction: column; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 8px; background: #fff; padding: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        #memberTableBody td { border: none; padding: 6px 0; display: flex; justify-content: space-between; align-items: center; }
+        #memberTableBody td::before { content: attr(data-label); font-weight: bold; color: #666; font-size: 12px; margin-right: 10px; }
+        @media (min-width: 768px) { #memberTableBody tr { display: table-row; } #memberTableBody td { display: table-cell; border-bottom: 1px solid #eee; padding: 10px 12px; } #memberTableBody td::before { display: none; } thead { display: table-header-group; } }
+        @media (max-width: 767px) { thead { display: none; } }
+        
+        .name-wrapper { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+        .name-link { color: var(--primary); font-weight: 700; font-size: 16px; text-decoration: underline; cursor: pointer; }
+        .badge { background: #eee; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .reele-badge { background: #e7f3ff; color: #0056b3; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+        
+        .match-reason { font-size: 10px; padding: 1px 5px; min-width: 45px; text-align: center; border-radius: 3px; display: inline-block; font-weight: bold; vertical-align: middle; margin-left: 3px; border: 1px solid rgba(0,0,0,0.03); line-height: 1.4; }
+        .reason-basic { background-color: #f1f3f5; color: #666; }
+        .reason-bill { background-color: #e6f4ea; color: #2d7a42; }
+        .reason-news { background-color: #fff4e6; color: #b95021; }
+        .reason-seminar { background-color: #f3f0ff; color: #6741d9; }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); }
+        .modal-content { background: white; position: absolute; bottom: 0; width: 100%; border-radius: 20px 20px 0 0; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @media (min-width: 768px) { .modal-content { position: relative; margin: 50px auto; width: 600px; border-radius: 8px; bottom: auto; } }
+        .modal-header { background: var(--primary); color: white; padding: 15px; position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; }
+        .detail-table { width: 100%; border-collapse: collapse; }
+        .detail-table th { background: #f8f9fa; width: 35%; padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; text-align: left; color: #666; }
+        .detail-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; line-height: 1.5; }
+        .loading { text-align: center; padding: 30px; font-size: 16px; color: var(--primary); }
+        .seminar-trigger-btn, .monitor-btn, .bill-trigger-btn { background: #2c3e50; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; height: 40px; }
+        .seminar-trigger-btn, .bill-trigger-btn { width: calc(100% - 30px); margin: 5px 15px 15px 15px; }
+        .monitor-btn-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 15px 15px 5px 15px; }
+        .info-section { display: none; padding: 0 15px 15px 15px; border-top: 1px solid #eee; background: #fff; }
+        .info-item { padding: 12px 0; border-bottom: 1px dotted #ccc; display: block; text-decoration: none; color: inherit; }
+        .info-title { color: var(--accent); font-weight: bold; cursor: pointer; text-decoration: underline; margin-bottom: 5px; font-size: 14px; }
+        .info-sub { font-size: 12px; color: #777; line-height: 1.4; }
+        .bill-status { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 8px; flex-shrink: 0; }
+        .status-stay { background: #eee; color: #666; }
+        .status-pass { background: #d4edda; color: #155724; }
+        .date-today { color: #ff0000 !important; font-weight: bold !important; }
+        .more-btn { width: 100%; height: 36px; margin-top: 10px; background: #fff; border: 1px solid var(--border); color: #666; font-size: 13px; border-radius: 6px; cursor: pointer; }
+        
+        .highlight { background-color: #fff3bf; color: #e67e22; font-weight: bold; padding: 0 2px; border-radius: 2px; }
+        
+        .bill-summary-box { display: none; background: #f8f9fa; padding: 12px; margin-top: 8px; border-radius: 6px; font-size: 12px; line-height: 1.6; color: #444; white-space: normal; border-left: 4px solid var(--primary); }
+        .summary-btn { background: #e9ecef; border: 1px solid #ced4da; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: auto; color: #495057; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header><h1>제22대 국회 의원실 검색</h1></header>
+    <div class="search-area">
+        <div class="search-row">
+            <select id="committeeSelect" onchange="handleFilter()">
+                <option value="문화체육관광위원회" selected>문화체육관광위원회</option>
+                <option value="">전체 위원회</option>
+                <option value="과학기술정보방송통신위원회">과학기술정보방송통신위원회</option>
+                <option value="교육위원회">교육위원회</option>
+                <option value="국방위원회">국방위원회</option>
+                <option value="국회운영위원회">국회운영위원회</option>
+                <option value="기획재정위원회">기획재정위원회</option>
+                <option value="농림축산식품해양수산위원회">농림축산식품해양수산위원회</option>
+                <option value="법제사법위원회">법제사법위원회</option>
+                <option value="보건복지위원회">보건복지위원회</option>
+                <option value="산업통상자원중소벤처기업위원회">산업통상자원중소벤처기업위원회</option>
+                <option value="여성가족위원회">여성가족위원회</option>
+                <option value="예산결산특별위원회">예산결산특별위원회</option>
+                <option value="외교통일위원회">외교통일위원회</option>
+                <option value="윤리특별위원회">윤리특별위원회</option>
+                <option value="정무위원회">정무위원회</option>
+                <option value="정보위원회">정보위원회</option>
+                <option value="행정안전위원회">행정안전위원회</option>
+                <option value="환경노동위원회">환경노동위원회</option>
+            </select>
+            <input type="text" id="unifiedSearch" placeholder="의원명, 보좌진, 의안명, 행사명, 뉴스 키워드 등 검색" onkeyup="if(window.event.keyCode==13){handleFilter()}">
+            <button class="search-btn" onclick="handleFilter()">검색</button>
+        </div>
+    </div>
+
+    <div class="sort-row">
+        <select id="topSort" class="sort-select" onchange="handleSort(this.value)">
+            <option value="ROOM_DESC" selected>호실순</option>
+            <option value="HG_NM">이름순</option>
+            <option value="UNITS_DESC">다선순</option>
+            <option value="NEAR_SEMINAR">행사임박순</option>
+            <option value="PROPOSE_DESC">의안제안순</option>
+            <option value="LATEST_NEWS">최신기사순</option>
+        </select>
+    </div>
+
+    <div id="loading" class="loading" style="display:none;">📡 통합 데이터 조회 중...</div>
+    
+    <div class="table-wrapper">
+        <table>
+            <thead><tr><th>성명</th><th>정당</th><th>사무실 호실</th><th>보좌관</th><th>선임비서관</th></tr></thead>
+            <tbody id="memberTableBody"></tbody>
+        </table>
+    </div>
+
+    <div class="sort-row" style="margin-top: 15px;">
+        <select id="bottomSort" class="sort-select" onchange="handleSort(this.value)">
+            <option value="ROOM_DESC" selected>호실순</option>
+            <option value="HG_NM">이름순</option>
+            <option value="UNITS_DESC">다선순</option>
+            <option value="NEAR_SEMINAR">행사임박순</option>
+            <option value="PROPOSE_DESC">의안제안순</option>
+            <option value="LATEST_NEWS">최신기사순</option>
+        </select>
+    </div>
+</div>
+
+<div id="detailModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><span></span><strong>의원 상세 정보</strong><span onclick="closeModal()" style="cursor:pointer; font-size:24px; padding: 0 10px;">&times;</span></div>
+        <table class="detail-table" id="detailContent"></table>
+        <div class="monitor-btn-group">
+            <button id="btnNaver" class="monitor-btn">네이버 뉴스</button>
+            <button id="btnGoogle" class="monitor-btn">구글 뉴스</button>
+            <button id="btnYoutube" class="monitor-btn">유튜브</button>
+        </div>
+        <div id="naverSection" class="info-section"><div id="naverList"></div></div>
+        <div id="googleSection" class="info-section"><div id="googleList"></div></div>
+        <div id="ytSection" class="info-section"><div id="ytList"></div></div>
+        <button id="btnSeminar" class="seminar-trigger-btn">행사일정 보기</button>
+        <div id="seminarSection" class="info-section"><div id="seminarList"></div></div>
+        <button id="btnBill" class="bill-trigger-btn">법률안 발의 현황 보기</button>
+        <div id="billSection" class="info-section"><div id="billList"></div></div>
+        <div style="padding: 15px; text-align: center; background: #f8f9fa;"><button onclick="closeModal()" style="background:#fff; color:var(--primary); border:1px solid var(--primary); width: 100px; height: 36px; font-weight: bold; border-radius: 6px; cursor: pointer;">닫기</button></div>
+    </div>
+</div>
+
+<script>
+    // GAS 웹앱 배포 URL만 남깁니다. API Key는 GAS Script Properties에만 저장하세요.
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbx674hDBg15__FCk1XB2HqOuxWMNB6Y2qn7b7WATT3QMCBNb4vPQzml7uZY8MJtbalU3A/exec";
+
+    async function api(type, params = {}) {
+        const url = new URL(GAS_URL);
+        url.searchParams.set('type', type);
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && String(value).trim() !== '') {
+                url.searchParams.set(key, value);
+            }
+        });
+
+        const res = await fetch(url.toString());
+        const data = await res.json();
+
+        if (!res.ok || (data && data.ok === false)) {
+            throw new Error((data && (data.error || data.body)) || `GAS 호출 실패: ${type}`);
+        }
+        return data;
+    }
 
     let allMembers = [];
     let currentFiltered = [];
@@ -12,43 +184,21 @@
 
     window.onload = fetchAllAssemblyData;
 
-    function apiUrl(type, params = {}) {
-        const usp = new URLSearchParams({ type, ...params });
-        return `${PROXY_URL}?${usp.toString()}`;
-    }
-
-    function isToday(d) {
-        return d && new Date().toDateString() === new Date(d).toDateString();
-    }
+    function isToday(d) { return d && new Date().toDateString() === new Date(d).toDateString(); }
 
     function applyHighlight(text, searchWord) {
-        if (!text) return '';
-        if (!searchWord) return String(text).replace(/<[^>]*>?/gm, '');
-        const cleanText = String(text).replace(/<[^>]*>?/gm, '');
-        const safeWord = searchWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(`(${safeWord})`, 'gi');
+        if (!searchWord) return text;
+        const cleanText = text.replace(/<[^>]*>?/gm, ''); 
+        const regex = new RegExp(`(${searchWord})`, 'gi');
         return cleanText.replace(regex, `<span class="highlight">$1</span>`);
     }
 
     async function fetchAllAssemblyData() {
         document.getElementById('loading').style.display = 'block';
         try {
-            const res = await fetch(apiUrl('members'));
-            const data = await res.json();
-
-            if (data.nwvrqwxyaytdsfvhu) {
-                allMembers = data.nwvrqwxyaytdsfvhu[1].row || [];
-                handleFilter();
-            } else {
-                console.error(data);
-                renderTable([]);
-            }
-        } catch (e) {
-            console.error(e);
-            renderTable([]);
-        } finally {
-            document.getElementById('loading').style.display = 'none';
-        }
+            const data = await api('members');
+            if (data.nwvrqwxyaytdsfvhu) { allMembers = data.nwvrqwxyaytdsfvhu[1].row; handleFilter(); }
+        } catch (e) { console.error(e); } finally { document.getElementById('loading').style.display = 'none'; }
     }
 
     async function handleFilter() {
@@ -57,18 +207,14 @@
         const committeeMembers = allMembers.filter(m => !committee || (m.CMITS && m.CMITS.includes(committee)));
 
         if (!text) {
-            committeeMembers.forEach(m => {
-                m.matchReasons = [];
-                m.searchPriority = 99;
-                m.latestActionDate = 0;
-            });
+            committeeMembers.forEach(m => { m.matchReasons = []; m.searchPriority = 99; m.latestActionDate = 0; }); 
             currentFiltered = committeeMembers;
             handleSort(document.getElementById('topSort').value);
             return;
         }
 
         document.getElementById('loading').style.display = 'block';
-        let matchMap = new Map();
+        let matchMap = new Map(); 
 
         committeeMembers.forEach(m => {
             let priority = 99;
@@ -77,33 +223,31 @@
             else if ([m.STAFF, m.SECRETARY, m.SECRETARY2].some(v => v && v.toLowerCase().includes(text))) priority = 3;
             else if ([m.ASSEM_ADDR, m.ORIG_NM].some(v => v && v.toLowerCase().includes(text))) priority = 7;
 
-            if (priority !== 99) {
-                matchMap.set(m.MONA_CD, { reasons: ['기본정보 매칭'], priority, date: 0 });
-            }
+            if (priority !== 99) matchMap.set(m.MONA_CD, { reasons: ["기본정보 매칭"], priority, date: 0 });
         });
 
         if (text.length >= 2) {
             try {
                 const [billRes, naverRes, googleRes, semiRes] = await Promise.all([
-                    fetch(apiUrl('bills', { q: text, pSize: 100 })),
-                    fetch(apiUrl('naver', { q: text, display: 50 })),
-                    fetch(apiUrl('google', { q: text })),
-                    fetch(apiUrl('seminars', { q: text, pSize: 100 }))
+                    api('bills', { q: text, pSize: 100 }),
+                    api('naver', { q: text, display: 50 }),
+                    api('google', { q: text }),
+                    api('seminars', { q: text, pSize: 100 })
                 ]);
 
-                const billData = await billRes.json();
-                const naverData = await naverRes.json();
-                const googleData = await googleRes.json();
-                const semiData = await semiRes.json();
+                const billData = billRes;
+                const naverData = naverRes;
+                const googleData = googleRes;
+                const semiData = semiRes;
 
                 if (billData.TVBPMBILL11) {
                     billData.TVBPMBILL11[1].row.forEach(r => {
-                        const proposers = (r.PROPOSER || '').split('(')[0].trim();
+                        const proposers = r.PROPOSER.split('(')[0].trim();
                         const billDate = new Date(r.PROPOSE_DT).getTime();
                         committeeMembers.forEach(m => {
                             if (proposers.includes(m.HG_NM)) {
                                 let info = matchMap.get(m.MONA_CD) || { reasons: [], priority: 99, date: 0 };
-                                if (!info.reasons.includes('의안명 매칭')) info.reasons.push('의안명 매칭');
+                                if (!info.reasons.includes("의안명 매칭")) info.reasons.push("의안명 매칭");
                                 info.priority = Math.min(info.priority, 4);
                                 info.date = Math.max(info.date, billDate);
                                 matchMap.set(m.MONA_CD, info);
@@ -114,12 +258,12 @@
 
                 if (naverData.items) {
                     naverData.items.forEach(i => {
-                        const title = (i.title || '').replace(/<[^>]*>?/gm, '');
+                        const title = i.title.replace(/<[^>]*>?/gm, '');
                         const neDate = new Date(i.pubDate).getTime();
                         committeeMembers.forEach(m => {
                             if (title.includes(m.HG_NM)) {
                                 let info = matchMap.get(m.MONA_CD) || { reasons: [], priority: 99, date: 0 };
-                                if (!info.reasons.includes('뉴스매칭(네)')) info.reasons.push('뉴스매칭(네)');
+                                if (!info.reasons.includes("뉴스매칭(네)")) info.reasons.push("뉴스매칭(네)");
                                 info.priority = Math.min(info.priority, 5);
                                 info.date = Math.max(info.date, neDate);
                                 matchMap.set(m.MONA_CD, info);
@@ -128,21 +272,20 @@
                     });
                 }
 
-                if (googleData.items) {
-                    googleData.items.forEach(gi => {
-                        const title = gi.title || '';
-                        const neDate = new Date(gi.pubDate).getTime();
-                        committeeMembers.forEach(m => {
-                            if (title.includes(m.HG_NM)) {
-                                let info = matchMap.get(m.MONA_CD) || { reasons: [], priority: 99, date: 0 };
-                                if (!info.reasons.includes('뉴스매칭(구)')) info.reasons.push('뉴스매칭(구)');
-                                info.priority = Math.min(info.priority, 5);
-                                info.date = Math.max(info.date, neDate);
-                                matchMap.set(m.MONA_CD, info);
-                            }
-                        });
+                const gItems = googleData.items || [];
+                gItems.forEach(gi => {
+                    const title = gi.title || '';
+                    const neDate = new Date(gi.pubDate || '').getTime();
+                    committeeMembers.forEach(m => {
+                        if (title.includes(m.HG_NM)) {
+                            let info = matchMap.get(m.MONA_CD) || { reasons: [], priority: 99, date: 0 };
+                            if (!info.reasons.includes("뉴스매칭(구)")) info.reasons.push("뉴스매칭(구)");
+                            info.priority = Math.min(info.priority, 5);
+                            info.date = Math.max(info.date, neDate);
+                            matchMap.set(m.MONA_CD, info);
+                        }
                     });
-                }
+                });
 
                 if (semiData.nfcoioopazrwmjrgs) {
                     semiData.nfcoioopazrwmjrgs[1].row.forEach(r => {
@@ -150,7 +293,7 @@
                         committeeMembers.forEach(m => {
                             if (r.NAME && r.NAME.includes(m.HG_NM)) {
                                 let info = matchMap.get(m.MONA_CD) || { reasons: [], priority: 99, date: 0 };
-                                if (!info.reasons.includes('행사명 매칭')) info.reasons.push('행사명 매칭');
+                                if (!info.reasons.includes("행사명 매칭")) info.reasons.push("행사명 매칭");
                                 info.priority = Math.min(info.priority, 6);
                                 info.date = Math.max(info.date, semiDate);
                                 matchMap.set(m.MONA_CD, info);
@@ -158,13 +301,11 @@
                         });
                     });
                 }
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         currentFiltered = committeeMembers.filter(m => {
-            if (matchMap.has(m.MONA_CD)) {
+            if(matchMap.has(m.MONA_CD)) {
                 let info = matchMap.get(m.MONA_CD);
                 m.matchReasons = info.reasons;
                 m.searchPriority = info.priority;
@@ -173,7 +314,7 @@
             }
             return false;
         });
-
+        
         document.getElementById('loading').style.display = 'none';
         currentFiltered.sort((a, b) => a.searchPriority - b.searchPriority || b.latestActionDate - a.latestActionDate);
         renderTable(currentFiltered);
@@ -185,11 +326,11 @@
         if (criteria === 'NEAR_SEMINAR') { await sortBySeminar(); return; }
         if (criteria === 'PROPOSE_DESC') { await sortByBillDate(); return; }
         if (criteria === 'LATEST_NEWS') { await sortByLatestNews(); return; }
-
+        
         currentFiltered.sort((a, b) => {
             if (a.searchPriority !== b.searchPriority) return a.searchPriority - b.searchPriority;
             if (criteria === 'HG_NM') return (a.HG_NM || '').localeCompare(b.HG_NM || '', 'ko');
-            if (criteria === 'ROOM_DESC') return (parseInt((b.ASSEM_ADDR || '').replace(/[^0-9]/g, '')) || 0) - (parseInt((a.ASSEM_ADDR || '').replace(/[^0-9]/g, '')) || 0);
+            if (criteria === 'ROOM_DESC') return (parseInt(b.ASSEM_ADDR.replace(/[^0-9]/g, '')) || 0) - (parseInt(a.ASSEM_ADDR.replace(/[^0-9]/g, '')) || 0);
             if (criteria === 'UNITS_DESC') return (b.UNITS || '').split(',').length - (a.UNITS || '').split(',').length;
             return b.latestActionDate - a.latestActionDate;
         });
@@ -200,13 +341,9 @@
         document.getElementById('loading').style.display = 'block';
         const p = currentFiltered.map(async m => {
             try {
-                const q = `"${m.POLY_NM}" "${m.HG_NM}"`;
-                const res = await fetch(apiUrl('naver', { q, display: 1 }));
-                const data = await res.json();
+                const data = await api('naver', { q: `"${m.POLY_NM}" "${m.HG_NM}"`, display: 1 });
                 m.latestNewsDate = data.items && data.items.length > 0 ? new Date(data.items[0].pubDate) : new Date(0);
-            } catch {
-                m.latestNewsDate = new Date(0);
-            }
+            } catch { m.latestNewsDate = new Date(0); }
             return m;
         });
         currentFiltered = await Promise.all(p);
@@ -219,12 +356,9 @@
         document.getElementById('loading').style.display = 'block';
         const p = currentFiltered.map(async m => {
             try {
-                const res = await fetch(apiUrl('bills', { name: m.HG_NM, pSize: 1 }));
-                const data = await res.json();
+                const data = await api('bills', { name: m.HG_NM, pSize: 1 });
                 m.lastBillDate = data.TVBPMBILL11 ? new Date(data.TVBPMBILL11[1].row[0].PROPOSE_DT) : new Date(0);
-            } catch {
-                m.lastBillDate = new Date(0);
-            }
+            } catch { m.lastBillDate = new Date(0); }
             return m;
         });
         currentFiltered = await Promise.all(p);
@@ -235,21 +369,16 @@
 
     async function sortBySeminar() {
         document.getElementById('loading').style.display = 'block';
-        const today = new Date().setHours(0, 0, 0, 0);
+        const today = new Date().setHours(0,0,0,0);
         const p = currentFiltered.map(async m => {
             try {
-                const res = await fetch(apiUrl('seminars', { name: m.HG_NM, pSize: 10 }));
-                const data = await res.json();
-                m.nextSeminar = data.nfcoioopazrwmjrgs
-                    ? data.nfcoioopazrwmjrgs[1].row.map(r => new Date(r.SDATE)).filter(d => d >= today).sort((a, b) => a - b)[0]
-                    : null;
-            } catch {
-                m.nextSeminar = null;
-            }
+                const data = await api('seminars', { name: m.HG_NM, pSize: 10 });
+                m.nextSeminar = data.nfcoioopazrwmjrgs ? data.nfcoioopazrwmjrgs[1].row.map(r => new Date(r.SDATE)).filter(d => d >= today).sort((a,b)=>a-b)[0] : null;
+            } catch { m.nextSeminar = null; }
             return m;
         });
         currentFiltered = await Promise.all(p);
-        currentFiltered.sort((a, b) => (a.searchPriority !== b.searchPriority) ? a.searchPriority - b.searchPriority : (a.nextSeminar || Infinity) - (b.nextSeminar || Infinity));
+        currentFiltered.sort((a,b) => (a.searchPriority !== b.searchPriority) ? a.searchPriority - b.searchPriority : (a.nextSeminar || Infinity) - (b.nextSeminar || Infinity));
         renderTable(currentFiltered);
         document.getElementById('loading').style.display = 'none';
     }
@@ -260,13 +389,13 @@
             if (item.matchReasons && item.matchReasons.length > 0) {
                 badgesHtml = item.matchReasons.map(reason => {
                     let rClass = 'reason-basic';
-                    if (reason === '의안명 매칭') rClass = 'reason-bill';
-                    else if (reason.includes('뉴스매칭')) rClass = 'reason-news';
-                    else if (reason === '행사명 매칭') rClass = 'reason-seminar';
+                    if(reason === '의안명 매칭') rClass = 'reason-bill';
+                    else if(reason.includes('뉴스매칭')) rClass = 'reason-news';
+                    else if(reason === '행사명 매칭') rClass = 'reason-seminar';
                     return `<span class="match-reason ${rClass}">${reason}</span>`;
                 }).join('');
             }
-
+            
             return `
             <tr>
                 <td data-label="성명">
@@ -276,8 +405,8 @@
                         ${badgesHtml}
                     </div>
                 </td>
-                <td data-label="정당"><span class="badge">${item.POLY_NM || '-'}</span></td>
-                <td data-label="사무실 호실">${item.ASSEM_ADDR || '-'}</td>
+                <td data-label="정당"><span class="badge">${item.POLY_NM}</span></td>
+                <td data-label="사무실 호실">${item.ASSEM_ADDR}</td>
                 <td data-label="보좌관" style="font-size:12px; color:#666;">${item.STAFF || '-'}</td>
                 <td data-label="선임비서관" style="font-size:12px; color:#666;">${item.SECRETARY || '-'}</td>
             </tr>`;
@@ -286,29 +415,21 @@
 
     function openModal(monaCd) {
         const item = allMembers.find(m => m.MONA_CD === monaCd);
-        if (!item) return;
-
-        ['seminar', 'naver', 'google', 'yt', 'bill'].forEach(s => {
-            document.getElementById(`${s}Section`).style.display = 'none';
-            document.getElementById(`${s}List`).innerHTML = '';
-        });
-
+        if(!item) return;
+        ['seminar', 'naver', 'google', 'yt', 'bill'].forEach(s => { document.getElementById(`${s}Section`).style.display = 'none'; document.getElementById(`${s}List`).innerHTML = ''; });
         document.getElementById('btnSeminar').innerText = '행사일정 보기';
         document.getElementById('btnBill').innerText = '법률안 발의 현황 보기';
         monitorPage = { naver: 1, google: 1, yt: 1, bill: 1, seminar: 1 };
         monitorData = { naver: [], google: [], yt: [], bill: [], seminar: [] };
-
         const reele = (item.REELE_GNB_NM && item.REELE_GNB_NM !== 'undefined') ? item.REELE_GNB_NM : '';
         const f = [
-            ['한자성명', item.HJ_NM], ['정당', item.POLY_NM], ['선거구', item.ORIG_NM],
-            ['당선 정보', reele ? `${reele} (${item.UNITS || ''})` : (item.UNITS || '-')],
-            ['소속 위원회', item.CMITS], ['전화번호', item.TEL_NO], ['사무실 호실', item.ASSEM_ADDR],
-            ['이메일', item.E_MAIL], ['홈페이지', item.HOMEPAGE ? `<a href="${item.HOMEPAGE}" target="_blank" style="color:var(--accent); font-weight:bold;">바로가기</a>` : '-'],
-            ['보좌관', item.STAFF], ['선임비서관', item.SECRETARY], ['비서관', item.SECRETARY2]
+            ["한자성명", item.HJ_NM], ["정당", item.POLY_NM], ["선거구", item.ORIG_NM], 
+            ["당선 정보", reele ? `${reele} (${item.UNITS || ''})` : (item.UNITS || '-')], 
+            ["소속 위원회", item.CMITS], ["전화번호", item.TEL_NO], ["사무실 호실", item.ASSEM_ADDR], 
+            ["이메일", item.E_MAIL], ["홈페이지", item.HOMEPAGE ? `<a href="${item.HOMEPAGE}" target="_blank" style="color:var(--accent); font-weight:bold;">바로가기</a>` : '-'],
+            ["보좌관", item.STAFF], ["선임비서관", item.SECRETARY], ["비서관", item.SECRETARY2]
         ];
-
         document.getElementById('detailContent').innerHTML = f.map(x => `<tr><th>${x[0]}</th><td>${x[1] || '-'}</td></tr>`).join('');
-
         const q = `"${item.POLY_NM}" "${item.HG_NM}"`;
         document.getElementById('btnSeminar').onclick = () => toggleAccordion('seminar', item.HG_NM);
         document.getElementById('btnBill').onclick = () => toggleAccordion('bill', item.HG_NM);
@@ -325,32 +446,27 @@
         ['seminar', 'naver', 'google', 'yt', 'bill'].forEach(t => document.getElementById(`${t}Section`).style.display = 'none');
         document.getElementById('btnSeminar').innerText = '행사일정 보기';
         document.getElementById('btnBill').innerText = '법률안 발의 현황 보기';
-
         if (!isOpen) {
             sec.style.display = 'block';
             if (type === 'seminar') {
                 document.getElementById('btnSeminar').innerText = '행사일정 닫기';
-                if (!monitorData.seminar.length) await fetchSeminars(val); else renderSeminarList();
+                if(!monitorData.seminar.length) await fetchSeminars(val); else renderSeminarList(); 
             } else if (type === 'bill') {
                 document.getElementById('btnBill').innerText = '법률안 발의 현황 닫기';
-                if (!monitorData.bill.length) await fetchBills(val); else renderBillList();
-            } else {
-                if (!monitorData[type].length) await fetchMonitorData(type, val); else renderMonitorList(type);
+                if(!monitorData.bill.length) await fetchBills(val); else renderBillList(); 
+            } else { 
+                if(!monitorData[type].length) await fetchMonitorData(type, val); else renderMonitorList(type); 
             }
         }
     }
 
     async function fetchBills(name) {
-        const div = document.getElementById('billList');
-        div.innerHTML = '조회 중...';
+        const div = document.getElementById('billList'); div.innerHTML = '조회 중...';
         try {
-            const res = await fetch(apiUrl('bills', { name, pSize: 100 }));
-            const data = await res.json();
+            const data = await api('bills', { name, pSize: 100 });
             monitorData.bill = data.TVBPMBILL11 ? data.TVBPMBILL11[1].row : [];
             renderBillList();
-        } catch {
-            div.innerHTML = '오류 발생';
-        }
+        } catch { div.innerHTML = '오류 발생'; }
     }
 
     function renderBillList() {
@@ -359,7 +475,7 @@
         const searchTxt = document.getElementById('unifiedSearch').value.trim();
         let html = items.map(b => {
             const highlightedTitle = applyHighlight(b.BILL_NAME, searchTxt);
-            return `<div class="info-item" style="display:block;"><div style="display:flex; align-items:center; width:100%;"><span class="bill-status ${b.PASS_GUBUN === '계류의안' ? 'status-stay' : 'status-pass'}">${b.PASS_GUBUN || '-'}</span><span class="info-title bill-link" onclick="window.open('${b.LINK_URL || '#'}')" style="flex:1;">${highlightedTitle}</span><button class="summary-btn" onclick="toggleBillSummary('${b.BILL_NO}', this)">요약보기</button></div><div class="info-sub ${isToday(b.PROPOSE_DT) ? 'date-today' : ''}" style="margin-top:4px;">제안일: ${b.PROPOSE_DT || '-'} (의안번호: ${b.BILL_NO || '-'})</div><div id="summary_${b.BILL_NO}" class="bill-summary-box">요약을 불러오는 중...</div></div>`;
+            return `<div class="info-item" style="display:block;"><div style="display:flex; align-items:center; width:100%;"><span class="bill-status ${b.PASS_GUBUN === '계류의안' ? 'status-stay' : 'status-pass'}">${b.PASS_GUBUN}</span><span class="info-title bill-link" onclick="window.open('${b.LINK_URL}')" style="flex:1;">${highlightedTitle}</span><button class="summary-btn" onclick="toggleBillSummary('${b.BILL_NO}', this)">요약보기</button></div><div class="info-sub ${isToday(b.PROPOSE_DT) ? 'date-today' : ''}" style="margin-top:4px;">제안일: ${b.PROPOSE_DT} (의안번호: ${b.BILL_NO})</div><div id="summary_${b.BILL_NO}" class="bill-summary-box">요약을 불러오는 중...</div></div>`;
         }).join('');
         if (items.length < monitorData.bill.length) html += `<button class="more-btn" onclick="monitorPage.bill++; renderBillList()">더보기 (${items.length}/${monitorData.bill.length})</button>`;
         div.innerHTML = html || '내역 없음';
@@ -367,66 +483,34 @@
 
     async function toggleBillSummary(billNo, btn) {
         const box = document.getElementById(`summary_${billNo}`);
-        if (box.style.display === 'block') {
-            box.style.display = 'none';
-            btn.innerText = '요약보기';
-            return;
-        }
-        box.style.display = 'block';
-        btn.innerText = '요약닫기';
+        if (box.style.display === 'block') { box.style.display = 'none'; btn.innerText = '요약보기'; return; }
+        box.style.display = 'block'; btn.innerText = '요약닫기';
         if (box.getAttribute('data-loaded') === 'true') return;
-
         try {
-            const res = await fetch(apiUrl('billSummary', { billNo }));
-            const data = await res.json();
+            const data = await api('billSummary', { billNo });
             if (data.BPMBILLSUMMARY && data.BPMBILLSUMMARY[1].row) {
                 const txt = data.BPMBILLSUMMARY[1].row[0].SUMMARY || '요약 내용이 없습니다.';
                 box.innerHTML = `<strong>[제안이유 및 주요내용]</strong><br>${txt.replace(/\n/g, '<br>')}`;
-            } else {
-                box.innerText = '요약 정보가 없습니다.';
-            }
+            } else { box.innerText = '요약 정보가 없습니다.'; }
             box.setAttribute('data-loaded', 'true');
-        } catch {
-            box.innerText = '로드 실패';
-        }
+        } catch { box.innerText = '로드 실패'; }
     }
 
     async function fetchMonitorData(type, q) {
-        const div = document.getElementById(`${type}List`);
-        div.innerHTML = '로딩 중...';
+        const div = document.getElementById(`${type}List`); div.innerHTML = '로딩 중...';
         try {
             if (type === 'naver') {
-                const res = await fetch(apiUrl('naver', { q, display: 50 }));
-                const data = await res.json();
-                monitorData.naver = (data.items || []).map(i => ({
-                    title: i.title,
-                    link: i.link,
-                    sub: `${i.originallink ? i.originallink.split('/')[2] : '뉴스'} | ${new Date(i.pubDate).toLocaleDateString()}`,
-                    today: isToday(i.pubDate)
-                }));
+                const data = await api('naver', { q, display: 50 });
+                monitorData.naver = (data.items || []).map(i => ({ title: i.title, link: i.link, sub: `${i.originallink ? i.originallink.split('/')[2] : '뉴스'} | ${new Date(i.pubDate).toLocaleDateString()}`, today: isToday(i.pubDate) }));
             } else if (type === 'google') {
-                const res = await fetch(apiUrl('google', { q }));
-                const data = await res.json();
-                monitorData.google = (data.items || []).slice(0, 50).map(i => ({
-                    title: i.title,
-                    link: i.link,
-                    sub: `${i.source || '뉴스'} | ${new Date(i.pubDate).toLocaleDateString()}`,
-                    today: isToday(i.pubDate)
-                }));
+                const data = await api('google', { q });
+                monitorData.google = (data.items || []).slice(0, 50).map(i => ({ title: i.title, link: i.link, sub: `${i.source || '뉴스'} | ${new Date(i.pubDate).toLocaleDateString()}`, today: isToday(i.pubDate) }));
             } else if (type === 'yt') {
-                const res = await fetch(apiUrl('youtube', { q }));
-                const data = await res.json();
-                monitorData.yt = (data.items || []).map(v => ({
-                    title: v.snippet.title,
-                    link: `https://www.youtube.com/watch?v=${v.id.videoId}`,
-                    sub: `${v.snippet.channelTitle} | ${new Date(v.snippet.publishedAt).toLocaleDateString()}`,
-                    today: isToday(v.snippet.publishedAt)
-                }));
+                const data = await api('youtube', { q });
+                monitorData.yt = (data.items || []).map(v => ({ title: v.snippet.title, link: `https://www.youtube.com/watch?v=${v.id.videoId}`, sub: `${v.snippet.channelTitle} | ${new Date(v.snippet.publishedAt).toLocaleDateString()}`, today: isToday(v.snippet.publishedAt) }));
             }
             renderMonitorList(type);
-        } catch {
-            div.innerHTML = '로드 실패';
-        }
+        } catch { div.innerHTML = '로드 실패'; }
     }
 
     function renderMonitorList(type) {
@@ -442,16 +526,12 @@
     }
 
     async function fetchSeminars(name) {
-        const div = document.getElementById('seminarList');
-        div.innerHTML = '조회 중...';
+        const div = document.getElementById('seminarList'); div.innerHTML = '조회 중...';
         try {
-            const res = await fetch(apiUrl('seminars', { name, pSize: 100 }));
-            const data = await res.json();
+            const data = await api('seminars', { name, pSize: 100 });
             monitorData.seminar = data.nfcoioopazrwmjrgs ? data.nfcoioopazrwmjrgs[1].row : [];
             renderSeminarList();
-        } catch {
-            div.innerHTML = '오류 발생';
-        }
+        } catch { div.innerHTML = '오류 발생'; }
     }
 
     function renderSeminarList() {
@@ -460,16 +540,13 @@
         const searchTxt = document.getElementById('unifiedSearch').value.trim();
         let html = items.map(s => {
             const highlightedTitle = applyHighlight(s.TITLE, searchTxt);
-            return `<div class="info-item"><div class="info-title" onclick="if('${s.IMGLINK || ''}') window.open('${s.IMGLINK || ''}')">${highlightedTitle}</div><div class="info-sub ${isToday(s.SDATE) ? 'date-today' : ''}">일시: ${s.SDATE || '-'} | 장소: ${s.LOCATION || '-'}</div></div>`;
+            return `<div class="info-item"><div class="info-title" onclick="if('${s.IMGLINK}') window.open('${s.IMGLINK}')">${highlightedTitle}</div><div class="info-sub ${isToday(s.SDATE) ? 'date-today' : ''}">일시: ${s.SDATE} | 장소: ${s.LOCATION || '-'}</div></div>`;
         }).join('');
         if (items.length < monitorData.seminar.length) html += `<button class="more-btn" onclick="monitorPage.seminar++; renderSeminarList()">더보기 (${items.length}/${monitorData.seminar.length})</button>`;
         div.innerHTML = html || '일정 없음';
     }
 
-    function closeModal() {
-        document.getElementById('detailModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    }
+    function closeModal() { document.getElementById('detailModal').style.display = 'none'; document.body.style.overflow = 'auto'; }
 </script>
 </body>
 </html>
